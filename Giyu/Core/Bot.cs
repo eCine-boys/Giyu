@@ -46,6 +46,8 @@ namespace Giyu.Core
         {
             if (string.IsNullOrWhiteSpace(ConfigManager.Config.Token)) return;
 
+            await CommandManager.LoadCommandsAsync();
+            await EventManager.LoadCommands();
             await _client.LoginAsync(TokenType.Bot, ConfigManager.Config.Token);
             await _client.StartAsync();
 
