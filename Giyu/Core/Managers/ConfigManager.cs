@@ -8,9 +8,9 @@ namespace Giyu.Core.Managers
 {
     public static class ConfigManager
     {
-        private static string ConfigFolder = "Resources";
-        private static string ConfigFile = "config.json";
-        private static string ConfigPath = ConfigFolder + "/" + ConfigFile;
+        private static readonly string ConfigFolder = "Resources";
+        private static readonly string ConfigFile = "config.json";
+        private static readonly string ConfigPath = ConfigFolder + "/" + ConfigFile;
         public static BotConfig Config { get; private set; }
 
         static ConfigManager()

@@ -14,11 +14,9 @@ namespace Giyu.Core.Managers
         public static async Task LoadCommandsAsync()
         {
             await _commandService.AddModulesAsync(Assembly.GetEntryAssembly(), ServiceManager.Provider);
-            
-            foreach (var command in _commandService.Modules)
-            {
+
+            foreach (var command in _commandService.Commands)
                 Console.WriteLine($"Comando ${command.Name} carregado.");
-            }
         }
     }
 }
