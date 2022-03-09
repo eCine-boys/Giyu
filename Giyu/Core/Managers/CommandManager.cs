@@ -16,7 +16,7 @@ namespace Giyu.Core.Managers
             await _commandService.AddModulesAsync(Assembly.GetEntryAssembly(), ServiceManager.Provider);
 
             foreach (var command in _commandService.Commands)
-                Console.WriteLine($"Comando ${command.Name} carregado.");
+                LogManager.Log("CORE", $"Comando ${command.Name} carregado.");
         }
     }
 }

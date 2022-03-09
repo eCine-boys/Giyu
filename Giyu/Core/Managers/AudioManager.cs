@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using Victoria.Enums;
 using Victoria.Responses.Search;
+using System.Collections;
 
 namespace Giyu.Core.Managers
 {
@@ -34,12 +35,13 @@ namespace Giyu.Core.Managers
             }
         }
 
-        public static async Task<string> PlayAsync(SocketGuildUser user, IGuild guild, string query)
+        public static async Task<Embed> PlayAsync(SocketGuildUser user, IGuild guild, string query)
         {
-            Console.WriteLine($"{user.Nickname} - {query}");
-            if (user.VoiceChannel is null) return "Você precisa estar em um canal de voz para isso.";
 
-            if(!_lavaNode.HasPlayer(guild))
+            if (user.VoiceChannel is null) 
+                return EmbedManager.ReplySimple("Aviso", "Você precisa estar em um canal de voz para isso.", Color.Orange, user.Nickname);
+
+            if (!_lavaNode.HasPlayer(guild))
             {
                 try
                 {
@@ -56,7 +58,7 @@ namespace Giyu.Core.Managers
                 }
                 catch (Exception ex)
                 {
-                    return $"ERROR\n{ex.Message}";
+                    return EmbedManager.ReplySimple("Erro", $"{ex.Message}", Color.Red, user.Nickname);
                 }
             }
 
@@ -70,20 +72,56 @@ namespace Giyu.Core.Managers
                     await _lavaNode.SearchAsync(SearchType.YouTubeMusic, query)
                     : await _lavaNode.SearchYouTubeAsync(query);
 
-                if (search.Status == SearchStatus.NoMatches) return $"Não foram encontrados resultados para: {query}";
+                if (search.Status == SearchStatus.NoMatches)
+                    return EmbedManager.ReplySimple("Aviso", $"Não foram encontrados resultados para: {query}", Color.Orange, user.Nickname);
 
                 track = search.Tracks.FirstOrDefault();
 
                 if(player.Track != null && player.PlayerState is PlayerState.Playing || player.PlayerState is PlayerState.Paused)
                 {
                     player.Queue.Enqueue(track);
-                    Console.WriteLine($"[{DateTime.Now}]\t[AUDIO]\tMúsica adicionada a playlist.");
-                    return $"{track.Title} foi adicionada a playlist.";
+                    LogManager.Log("AUDIO", "Música adicionada a playlist.");
+                    EmbedBuilder embed_add = new EmbedBuilder();
+
+                    embed_add
+                        .WithTitle(track.Title)
+                        .AddField("Autor", track.Author)
+                        .AddField("Duração", track.Duration)
+                        .AddField("Link", track.Url)
+                        .WithThumbnailUrl(await track.FetchArtworkAsync())
+                        //.WithImageUrl(await track.FetchArtworkAsync())
+                        .WithCurrentTimestamp()
+                        .WithColor(EmbedManager.GetRandomColor())
+                        .WithFooter(x =>
+                        {
+                            x.IconUrl = guild.IconUrl;
+                            x.Text = "Adicionada na playlist";
+                        });
+
+                    return embed_add.Build();
                 }
 
                 await player.PlayAsync(track);
-                Console.WriteLine($"Tocando agora: {track.Title}");
-                return $"Tocando agora: {track.Title}";
+                LogManager.Log("AUDIO", $"Tocando agora: {track.Title}.");
+
+                EmbedBuilder embed = new EmbedBuilder();
+
+                embed
+                    .WithTitle(track.Title)
+                    .AddField("Autor", track.Author)
+                    .AddField("Duração", track.Duration)
+                    .AddField("Link", track.Url)
+                    .WithThumbnailUrl(await track.FetchArtworkAsync())
+                    //.WithImageUrl(await track.FetchArtworkAsync())
+                    .WithCurrentTimestamp()
+                    .WithColor(EmbedManager.GetRandomColor())
+                    .WithFooter(x =>
+                    {
+                        x.IconUrl = guild.IconUrl;
+                        x.Text = "Tocando agora";
+                    });
+
+                return embed.Build();
             } 
             catch (Exception ex)
             {
@@ -102,7 +140,7 @@ namespace Giyu.Core.Managers
 
                 await _lavaNode.LeaveAsync(player.VoiceChannel);
 
-                Console.WriteLine($"[{DateTime.Now}]\t(AUDIO)\tBot saiu do canal de voz.");
+                LogManager.Log("AUDIO", $"Bot saiu do canal de voz.");
                 return $"Saindo do canal de voz {player.VoiceChannel.Name}";
             }
             catch (InvalidOperationException ex)
@@ -131,6 +169,25 @@ namespace Giyu.Core.Managers
             }
         }
 
+        public static async Task<string> StopAsync(IGuild guild)
+        {
+            try
+            {
+                var player = _lavaNode.GetPlayer(guild);
+
+                if (player is null)
+                    return $"Não há música ativa no momento.";
+
+                await player.StopAsync();
+
+                return $"Audio parado, playlist removida. 👍";
+            }
+            catch (InvalidOperationException ex)
+            {
+                return ex.Message;
+            }
+        }
+
         public static async Task<string> ResumeAsync(IGuild guild)
         {
             try
@@ -142,7 +199,7 @@ namespace Giyu.Core.Managers
                     await player.ResumeAsync();
                 }
 
-                return $"**Resumed:** {player.Track.Title}";
+                return $"**Tocando novamente:** {player.Track.Title}";
             }
             catch (InvalidOperationException ex)
             {
@@ -158,6 +215,7 @@ namespace Giyu.Core.Managers
 
                 if (player == null)
                     return $"Não foi possível obter o player.";
+
                 if (player.Queue.Count < 1)
                 {
                     return $"Não não há próximas músicas para pular.";

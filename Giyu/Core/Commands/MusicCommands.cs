@@ -14,16 +14,21 @@ namespace Giyu.Core.Commands
         public async Task JoinCommand()
             => await Context.Channel.SendMessageAsync(await AudioManager.JoinAsync(Context.Guild, Context.User as IVoiceState, Context.Channel as ITextChannel));
 
+
+        [Alias("p")]
         [Command("play")]
         [Summary("Chama o bot para tocar uma música no canal de voz.")]
         public async Task PlayCommand([Remainder] string search)
-            => await Context.Channel.SendMessageAsync(await AudioManager.PlayAsync(Context.User as SocketGuildUser, Context.Guild, search));
+            => await Context.Channel.SendMessageAsync(embed: await AudioManager.PlayAsync(Context.User as SocketGuildUser, Context.Guild, search));
 
+
+        [Alias("quit", "q")]
         [Command("leave")]
         [Summary("Faz o bot sair do canal de voz.")]
         public async Task LeaveCommand()
             => await Context.Channel.SendMessageAsync(await AudioManager.LeaveAsync(Context.Guild));
 
+        [Alias("sk", "fs")]
         [Command("skip")]
         [Summary("Pula a música atual.")]
         public async Task SkipCommand()
@@ -38,5 +43,11 @@ namespace Giyu.Core.Commands
         [Summary("Pula a música atual.")]
         public async Task ResumeCommand()
             => await Context.Channel.SendMessageAsync(await AudioManager.ResumeAsync(Context.Guild));
+
+        [Command("stop")]
+        [Summary("Para a música e limpa a playlist.")]
+        public async Task StopCommand()
+            => await Context.Channel.SendMessageAsync(await AudioManager.StopAsync(Context.Guild));
+
     }
 }

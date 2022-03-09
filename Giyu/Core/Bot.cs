@@ -10,8 +10,8 @@ namespace Giyu.Core
 {
     public class Bot
     {
-        private DiscordSocketClient _client;
-        private CommandService _commandService;
+        private readonly DiscordSocketClient _client;
+        private readonly CommandService _commandService;
 
 
         public Bot()

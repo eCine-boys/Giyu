@@ -3,8 +3,6 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using Victoria;
 
@@ -12,21 +10,21 @@ namespace Giyu.Core.Managers
 {
     public static class EventManager
     {
-        private static LavaNode _lavaNode = ServiceManager.Provider.GetRequiredService<LavaNode>();
-        private static DiscordSocketClient _client = ServiceManager.GetService<DiscordSocketClient>();
-        private static CommandService _commandService = ServiceManager.GetService<CommandService>();
+        private readonly static LavaNode _lavaNode = ServiceManager.Provider.GetRequiredService<LavaNode>();
+        private readonly static DiscordSocketClient _client = ServiceManager.GetService<DiscordSocketClient>();
+        private readonly static CommandService _commandService = ServiceManager.GetService<CommandService>();
 
         public static Task LoadCommands()
         {
             _client.Log += message =>
             {
-                Console.WriteLine($"[{DateTime.Now}]\t({message.Source})\t{message.Message}");
+                LogManager.Log($"{message.Source}", $"{message.Message}");
                 return Task.CompletedTask;
             };
 
             _commandService.Log += message =>
             {
-                Console.WriteLine($"[{DateTime.Now}]\t({message.Source})\t{message.Message}");
+                LogManager.Log($"{message.Source}", $"{message.Message}");
                 return Task.CompletedTask;
             };
 
@@ -53,7 +51,6 @@ namespace Giyu.Core.Managers
             if(!result.IsSuccess)
             {
                 if (result.Error == CommandError.UnknownCommand) return;
-                Console.WriteLine(result.ToString());
             }
         }
 
@@ -67,7 +64,7 @@ namespace Giyu.Core.Managers
                 throw ex;
             }
 
-            Console.WriteLine($"[{DateTime.Now}]\t(READY)\tBot está online.");
+            LogManager.Log("READY", "Bot está online.");
 
             await _client.SetStatusAsync(Discord.UserStatus.Online);
             await _client.SetGameAsync($"Prefix: {ConfigManager.Config.Prefix}", null, Discord.ActivityType.Listening);
