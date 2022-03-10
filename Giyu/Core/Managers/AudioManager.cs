@@ -4,6 +4,7 @@ using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Victoria;
 using Victoria.Enums;
@@ -257,6 +258,47 @@ namespace Giyu.Core.Managers
             catch (Exception ex)
             {
                 return $"Skip {ex.Message}";
+            }
+        }
+
+        public static async Task<Embed> ListAsync(SocketCommandContext context)
+        {
+            try
+            {
+                StringBuilder ListBuilder = new StringBuilder();
+
+                LavaPlayer player = _lavaNode.GetPlayer(context.Guild);
+
+                if (player == null)
+                    return EmbedManager.ReplySimple("Queue", "Não foi possível obter o player.");
+
+                if(player.PlayerState is PlayerState.Playing || player.PlayerState is PlayerState.Paused)
+                {
+                    if(player.Queue.Count < 1 && player.Track != null)
+                    {
+                        return EmbedManager.ReplySimple("Tocando agora", $"{player.Track.Author} - {player.Track.Title}");
+                    }
+                    else
+                    {
+                        int trackPosNum = 2;
+                        foreach(LavaTrack track in player.Queue)
+                        {
+                            ListBuilder.Append($"{trackPosNum}: [{track.Title}]({track.Url}) - {track.Id}\n");
+                            trackPosNum++;
+                        }
+
+                        return EmbedManager.ReplySimple("Queue", $"Tocando agora: [{player.Track.Title}]({player.Track.Url}) \n{ListBuilder}");
+                    }
+                }
+                else
+                {
+                    return EmbedManager.ReplySimple("Erro", "O Bot deve estar parado ou pausado para isso.");
+                }
+
+            }
+            catch(Exception ex)
+            {
+                return EmbedManager.ReplySimple("Error", $"{ex.Message}");
             }
         }
 

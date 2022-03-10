@@ -49,9 +49,14 @@ namespace Giyu.Core.Commands
         public async Task StopCommand()
             => await Context.Channel.SendMessageAsync(await AudioManager.StopAsync(Context.Guild));
 
-        [Alias("q")]
+        [Alias("q", "pl")]
         [Command("queue")]
-        [Summary("Exibe a playlist do servidor.")]
+        [Summary("Lista as músicas da playlist atual caso haja uma.")]
+        public async Task List()
+            => await Context.Channel.SendMessageAsync(embed: await AudioManager.ListAsync(Context));
+        
+        [Alias("vol")]
+        [Command("volume")]
         public async Task VolumeCommand([Remainder] ushort volume)
             => await Context.Channel.SendMessageAsync(embed: await AudioManager.SetVolumeAsync(Context.Guild, volume));
 
