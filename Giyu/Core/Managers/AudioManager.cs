@@ -1,22 +1,20 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using System.Threading.Tasks;
-using Victoria;
-using Victoria.EventArgs;
-using Discord;
+﻿using Discord;
+using Discord.Commands;
 using Discord.WebSocket;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Linq;
-using System.Text;
+using System.Threading.Tasks;
+using Victoria;
 using Victoria.Enums;
+using Victoria.EventArgs;
 using Victoria.Responses.Search;
-using System.Collections;
 
 namespace Giyu.Core.Managers
 {
     public static class AudioManager
     {
         private static readonly LavaNode _lavaNode = ServiceManager.Provider.GetRequiredService<LavaNode>();
-
 
         public static async Task<string> JoinAsync(IGuild guild, IVoiceState voiceState, ITextChannel textChannel)
         {
@@ -35,45 +33,44 @@ namespace Giyu.Core.Managers
             }
         }
 
-        public static async Task<Embed> PlayAsync(SocketGuildUser user, IGuild guild, string query)
+        public static async Task<Embed> PlayAsync(SocketGuildUser user, IGuild guild, string query, SocketCommandContext context)
         {
 
+
             if (user.VoiceChannel is null) 
-                return EmbedManager.ReplySimple("Aviso", "Você precisa estar em um canal de voz para isso.", Color.Orange, user.Nickname);
+                return EmbedManager.ReplySimple("Aviso", "Você precisa estar em um canal de voz para isso.");
 
             if (!_lavaNode.HasPlayer(guild))
             {
                 try
                 {
-                    var _channels = await guild.GetTextChannelsAsync();
-
-                    var _channel = _channels.First();
-
-                    if(!(_channel is null))
+                    if (!!(context.Channel is ITextChannel channel))
                     {
-                        await _lavaNode.JoinAsync(user.VoiceChannel, _channel);
+                        await _lavaNode.JoinAsync(user.VoiceChannel, channel);
 
-                        //return $"Conectado em {user.VoiceChannel.Name}";
+                        Emoji likeEmote = new Emoji("👍");
+
+                        _ = context.Message.AddReactionAsync(likeEmote);
                     }
                 }
                 catch (Exception ex)
                 {
-                    return EmbedManager.ReplySimple("Erro", $"{ex.Message}", Color.Red, user.Nickname);
+                    return EmbedManager.ReplySimple("Erro", $"{ex.Message}");
                 }
             }
 
             try
             {
-                var player = _lavaNode.GetPlayer(guild);
+                LavaPlayer player = _lavaNode.GetPlayer(guild);
 
                 LavaTrack track;
 
-                var search = Uri.IsWellFormedUriString(query, UriKind.Absolute) ?
+                SearchResponse search = Uri.IsWellFormedUriString(query, UriKind.Absolute) ?
                     await _lavaNode.SearchAsync(SearchType.YouTubeMusic, query)
                     : await _lavaNode.SearchYouTubeAsync(query);
 
                 if (search.Status == SearchStatus.NoMatches)
-                    return EmbedManager.ReplySimple("Aviso", $"Não foram encontrados resultados para: {query}", Color.Orange, user.Nickname);
+                    return EmbedManager.ReplySimple("Aviso", $"Não foram encontrados resultados para: {query}");
 
                 track = search.Tracks.FirstOrDefault();
 
@@ -134,7 +131,7 @@ namespace Giyu.Core.Managers
         {
             try
             {
-                var player = _lavaNode.GetPlayer(guild);
+                LavaPlayer player = _lavaNode.GetPlayer(guild);
 
                 if (player.PlayerState is PlayerState.Playing) await player.StopAsync();
 
@@ -153,7 +150,8 @@ namespace Giyu.Core.Managers
         {
             try
             {
-                var player = _lavaNode.GetPlayer(guild);
+                LavaPlayer player = _lavaNode.GetPlayer(guild);
+
                 if (!(player.PlayerState is PlayerState.Playing))
                 {
                     await player.PauseAsync();
@@ -163,9 +161,9 @@ namespace Giyu.Core.Managers
                 await player.PauseAsync();
                 return $"**Pausado:** {player.Track.Title}.";
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
-                return ex.Message;
+                return "O Bot não está conectado a um canal de voz para isso.";
             }
         }
 
@@ -192,7 +190,7 @@ namespace Giyu.Core.Managers
         {
             try
             {
-                var player = _lavaNode.GetPlayer(guild);
+                LavaPlayer player = _lavaNode.GetPlayer(guild);
 
                 if (player.PlayerState is PlayerState.Paused)
                 {
@@ -201,9 +199,31 @@ namespace Giyu.Core.Managers
 
                 return $"**Tocando novamente:** {player.Track.Title}";
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
-                return ex.Message;
+                return "O Bot não está conectado a um canal de voz para isso.";
+            }
+        }
+
+        public static async Task<Embed> SetVolumeAsync(IGuild guild, ushort volume)
+        {
+            try
+            {
+                LavaPlayer player = _lavaNode.GetPlayer(guild);
+
+                if (player.PlayerState != PlayerState.None)
+                {
+                    await player.UpdateVolumeAsync(volume);
+
+                    return EmbedManager.ReplySimple("Volume", $"Volume atualizado para {volume}%");
+                } else
+                {
+                    return EmbedManager.ReplySimple("Volume", "O Bot precisa estar conectado a um canal de voz para isso.\n use **join**.");
+                }
+
+            } catch(Exception ex)
+            {
+                return EmbedManager.ReplySimple("Volume", $"Erro ao atualizar volume: {ex.Message}");
             }
         }
 
@@ -242,6 +262,7 @@ namespace Giyu.Core.Managers
 
         public static async Task TrackEnded(TrackEndedEventArgs args)
         {
+            LogManager.Log("DEBUG", args.Reason.ToString());
 
             if (!args.Player.Queue.TryDequeue(out var queueable))
             {
@@ -249,16 +270,17 @@ namespace Giyu.Core.Managers
                 return;
             }
 
-
-            if (!(queueable is LavaTrack track))
+            if (queueable is LavaTrack track)
             {
-                await args.Player.TextChannel.SendMessageAsync("Próximo item na playlist não é uma música.");
+                await args.Player.PlayAsync(queueable);
+
+                await args.Player.TextChannel.SendMessageAsync($"Tocando agora: {track.Title}");
+            } else
+            {
+                // await args.Player.TextChannel.SendMessageAsync("Próximo item na playlist não é uma música.");
                 return;
             }
 
-            await args.Player.PlayAsync(track);
-
-            await args.Player.TextChannel.SendMessageAsync($"Tocando agora: {track.Title}");
         }
 
     }

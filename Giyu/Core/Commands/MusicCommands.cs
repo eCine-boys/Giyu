@@ -19,7 +19,7 @@ namespace Giyu.Core.Commands
         [Command("play")]
         [Summary("Chama o bot para tocar uma música no canal de voz.")]
         public async Task PlayCommand([Remainder] string search)
-            => await Context.Channel.SendMessageAsync(embed: await AudioManager.PlayAsync(Context.User as SocketGuildUser, Context.Guild, search));
+            => await Context.Channel.SendMessageAsync(embed: await AudioManager.PlayAsync(Context.User as SocketGuildUser, Context.Guild, search, Context));
 
 
         [Alias("quit", "q")]
@@ -48,6 +48,12 @@ namespace Giyu.Core.Commands
         [Summary("Para a música e limpa a playlist.")]
         public async Task StopCommand()
             => await Context.Channel.SendMessageAsync(await AudioManager.StopAsync(Context.Guild));
+
+        [Alias("q")]
+        [Command("queue")]
+        [Summary("Exibe a playlist do servidor.")]
+        public async Task VolumeCommand([Remainder] ushort volume)
+            => await Context.Channel.SendMessageAsync(embed: await AudioManager.SetVolumeAsync(Context.Guild, volume));
 
     }
 }

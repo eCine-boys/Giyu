@@ -28,7 +28,7 @@ namespace Giyu.Core.Managers
 
             return colors[rnd.Next(0, colors.Length)];
         }
-        public static Embed ReplySimple(string title, string description, Color color, string author)
+        public static Embed ReplySimple(string title, string description)
         {
 
             EmbedBuilder embed = new EmbedBuilder();

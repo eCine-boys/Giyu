@@ -13,7 +13,6 @@ namespace Giyu.Core
         private readonly DiscordSocketClient _client;
         private readonly CommandService _commandService;
 
-
         public Bot()
         {
             _client = new DiscordSocketClient(new DiscordSocketConfig()

@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Threading.Tasks;
 using Victoria;
+using Victoria.EventArgs;
 
 namespace Giyu.Core.Managers
 {
@@ -31,6 +32,11 @@ namespace Giyu.Core.Managers
             _client.Ready += OnReady;
 
             _client.MessageReceived += OnMessageReceived;
+
+            _lavaNode.OnTrackException += OnTrackException;
+            _lavaNode.OnTrackStuck += OnTrackStuck;
+            _lavaNode.OnWebSocketClosed += OnWebSocketClosed;
+            _lavaNode.OnTrackEnded += AudioManager.TrackEnded;
 
             return Task.CompletedTask;
         }
@@ -68,6 +74,29 @@ namespace Giyu.Core.Managers
 
             await _client.SetStatusAsync(Discord.UserStatus.Online);
             await _client.SetGameAsync($"Prefix: {ConfigManager.Config.Prefix}", null, Discord.ActivityType.Listening);
+        }
+
+        private static async Task OnTrackException(TrackExceptionEventArgs arg)
+        {
+            LogManager.Log("TrackException", $"{arg.Track.Title} lançou um erro. => Console do Lavalink.");
+            arg.Player.Queue.Enqueue(arg.Track);
+            await arg.Player.TextChannel?.SendMessageAsync(
+                $"{arg.Track.Title} has been re-added to queue after throwing an exception.");
+        }
+
+        private static async Task OnTrackStuck(TrackStuckEventArgs arg)
+        {
+            LogManager.Log("TrackStuck", $"{arg.Track.Title} ficou presa por {arg.Threshold}ms. => Console do Lavalink.");
+
+            arg.Player.Queue.Enqueue(arg.Track);
+            await arg.Player.TextChannel?.SendMessageAsync(
+                $"{arg.Track.Title} foi adicionada novamente a playlist após ficar travada.");
+        }
+
+        private static Task OnWebSocketClosed(WebSocketClosedEventArgs arg)
+        {
+            LogManager.Log("WebSocketClosed", $"Conexão a Discord WebSocket fechada pelo motivo: {arg.Reason}");
+            return Task.CompletedTask;
         }
     }
 }
