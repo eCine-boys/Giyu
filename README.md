@@ -1,5 +1,5 @@
 # Giyu
-Discord Bot
+Discord Bot w/ LavaLink server.
 
 ## Built With
 
