@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.Commands;
+using Discord.Interactions;
 using Discord.WebSocket;
 using Giyu.Core.Managers;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,6 +13,7 @@ namespace Giyu.Core
     {
         private readonly DiscordSocketClient _client;
         private readonly CommandService _commandService;
+        private InteractionService _interactionService;
 
         public Bot()
         {
@@ -24,14 +26,22 @@ namespace Giyu.Core
             {
                 LogLevel = LogSeverity.Debug,
                 CaseSensitiveCommands = true,
-                DefaultRunMode = RunMode.Async,
+                DefaultRunMode = Discord.Commands.RunMode.Async,
                 IgnoreExtraArgs = true,
+            });
+
+            _interactionService = new InteractionService(_client.Rest, new InteractionServiceConfig()
+            {
+                LogLevel = LogSeverity.Debug,
+                DefaultRunMode = Discord.Interactions.RunMode.Async,
             });
 
             ServiceCollection collection = new ServiceCollection();
             
             collection.AddSingleton(_client);
+            collection.AddSingleton(_interactionService);
             collection.AddSingleton(_commandService);
+
             collection.AddLavaNode(x =>
             {
                 x.SelfDeaf = false;

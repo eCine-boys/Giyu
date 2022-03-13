@@ -1,8 +1,12 @@
 ﻿using Discord;
 using Discord.Commands;
+using Discord.Interactions;
+using Discord.Net;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 using System;
+using System.Reflection;
 using System.Threading.Tasks;
 using Victoria;
 using Victoria.EventArgs;
@@ -14,6 +18,7 @@ namespace Giyu.Core.Managers
         private readonly static LavaNode _lavaNode = ServiceManager.Provider.GetRequiredService<LavaNode>();
         private readonly static DiscordSocketClient _client = ServiceManager.GetService<DiscordSocketClient>();
         private readonly static CommandService _commandService = ServiceManager.GetService<CommandService>();
+        private static InteractionService _interactionService = ServiceManager.Provider.GetRequiredService<InteractionService>();
 
         public static Task LoadCommands()
         {
@@ -33,12 +38,20 @@ namespace Giyu.Core.Managers
 
             _client.MessageReceived += OnMessageReceived;
 
+
             _lavaNode.OnTrackException += OnTrackException;
             _lavaNode.OnTrackStuck += OnTrackStuck;
             _lavaNode.OnWebSocketClosed += OnWebSocketClosed;
             _lavaNode.OnTrackEnded += AudioManager.TrackEnded;
 
             return Task.CompletedTask;
+        }
+
+        private static async Task OnInteractionCreated(SocketInteraction interaction)
+        {
+            IServiceScope scope = ServiceManager.Provider.CreateScope();
+            SocketInteractionContext context = new SocketInteractionContext(_client, interaction);
+            await _interactionService.ExecuteCommandAsync(context, scope.ServiceProvider);
         }
 
         private static async Task OnMessageReceived(SocketMessage arg) 
@@ -60,10 +73,51 @@ namespace Giyu.Core.Managers
             }
         }
 
+        private static async Task SlashCommandExecuted(SlashCommandInfo slashInfo, Discord.IInteractionContext slashCtx, Discord.Interactions.IResult slashResult)
+        {
+            if (!slashResult.IsSuccess)
+            {
+                switch (slashResult.Error)
+                {
+                    case InteractionCommandError.UnmetPrecondition:
+                        await slashCtx.Interaction.RespondAsync($"Pré condição não atendida: {slashResult.ErrorReason}");
+                        break;
+                    case InteractionCommandError.UnknownCommand:
+                        await slashCtx.Interaction.RespondAsync("Comando desconhecido.");
+                        break;
+                    case InteractionCommandError.Exception:
+                        await slashCtx.Interaction.RespondAsync($"Erro no comando: {slashResult.ErrorReason}");
+                        break;
+                    case InteractionCommandError.Unsuccessful:
+                        await slashCtx.Interaction.RespondAsync("Comando não pode ser executado");
+                        break;
+                    case InteractionCommandError.BadArgs:
+                        await slashCtx.Interaction.RespondAsync("Número ou argumentos inválidos");
+                        break;
+
+                    default:
+                        break;
+                }
+            }
+        }
+
         private static async Task OnReady()
         {
             try
             {
+                _interactionService = new InteractionService(_client.Rest);
+                await _interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), ServiceManager.Provider);
+                await _interactionService.RegisterCommandsGloballyAsync();
+
+                foreach(var command in _interactionService.SlashCommands)
+                {
+                    LogManager.Log("SLASH", $"{command.Name} carregado com sucesso.");
+                }
+
+                _client.InteractionCreated += OnInteractionCreated;
+
+                _interactionService.SlashCommandExecuted += SlashCommandExecuted;
+
                 await _lavaNode.ConnectAsync();
             } catch (Exception ex)
             {
@@ -75,6 +129,11 @@ namespace Giyu.Core.Managers
             await _client.SetStatusAsync(Discord.UserStatus.Online);
             await _client.SetGameAsync($"Prefix: {ConfigManager.Config.Prefix}", null, Discord.ActivityType.Listening);
         }
+
+     /* private static async Task SlashCommandHandler(SocketSlashCommand command) // Controlar comandos futuramente;
+        {
+            await command.RespondAsync($"Executado {command.Data.Name}");
+        } */
 
         private static async Task OnTrackException(TrackExceptionEventArgs arg)
         {

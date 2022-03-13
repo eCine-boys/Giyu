@@ -15,6 +15,5 @@ namespace Giyu.Core.Managers
         public static T GetService<T>() where T : new ()
             => Provider.GetRequiredService<T>();
 
-
     }
 }

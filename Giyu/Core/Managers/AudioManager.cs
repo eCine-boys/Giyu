@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.Commands;
+using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -34,10 +35,96 @@ namespace Giyu.Core.Managers
             }
         }
 
+        public static async Task<Embed> PlayAsync(SocketGuildUser user, SocketGuild guild, string query, SocketInteractionContext context)
+        {
+            if (user.VoiceChannel is null)
+                return EmbedManager.ReplySimple("Aviso", "Você precisa estar em um canal de voz para isso.");
+
+            if (!_lavaNode.HasPlayer(guild))
+            {
+                try
+                {
+                    if (!!(context.Channel is ITextChannel channel))
+                    {
+                        await _lavaNode.JoinAsync(user.VoiceChannel, channel);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    return EmbedManager.ReplySimple("Erro", $"{ex.Message}");
+                }
+            }
+
+            try
+            {
+                LavaPlayer player = _lavaNode.GetPlayer(guild);
+
+                LavaTrack track;
+
+                SearchResponse search = Uri.IsWellFormedUriString(query, UriKind.Absolute) ?
+                    await _lavaNode.SearchAsync(SearchType.YouTubeMusic, query)
+                    : await _lavaNode.SearchYouTubeAsync(query);
+
+                if (search.Status == SearchStatus.NoMatches)
+                    return EmbedManager.ReplySimple("Aviso", $"Não foram encontrados resultados para: {query}");
+
+                track = search.Tracks.FirstOrDefault();
+
+                if (player.Track != null && player.PlayerState is PlayerState.Playing || player.PlayerState is PlayerState.Paused)
+                {
+                    player.Queue.Enqueue(track);
+                    LogManager.Log("AUDIO", "Música adicionada a playlist.");
+                    EmbedBuilder embed_add = new EmbedBuilder();
+
+                    embed_add
+                        .WithTitle(track.Title)
+                        .AddField("Autor", track.Author)
+                        .AddField("Duração", track.Duration)
+                        .AddField("Link", track.Url)
+                        .WithThumbnailUrl(await track.FetchArtworkAsync())
+                        //.WithImageUrl(await track.FetchArtworkAsync())
+                        .WithCurrentTimestamp()
+                        .WithColor(EmbedManager.GetRandomColor())
+                        .WithFooter(x =>
+                        {
+                            x.IconUrl = guild.IconUrl;
+                            x.Text = "Adicionada na playlist";
+                        });
+
+                    return embed_add.Build();
+                }
+
+                await player.PlayAsync(track);
+                LogManager.Log("AUDIO", $"Tocando agora: {track.Title}.");
+
+                EmbedBuilder embed = new EmbedBuilder();
+
+                embed
+                    .WithTitle(track.Title)
+                    .AddField("Autor", track.Author)
+                    .AddField("Duração", track.Duration)
+                    .AddField("Link", track.Url)
+                    .WithThumbnailUrl(await track.FetchArtworkAsync())
+                    //.WithImageUrl(await track.FetchArtworkAsync())
+                    .WithCurrentTimestamp()
+                    .WithColor(EmbedManager.GetRandomColor())
+                    .WithFooter(x =>
+                    {
+                        x.IconUrl = guild.IconUrl;
+                        x.Text = "Tocando agora";
+                    });
+
+                return embed.Build();
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+
+        }
+
         public static async Task<Embed> PlayAsync(SocketGuildUser user, IGuild guild, string query, SocketCommandContext context)
         {
-
-
             if (user.VoiceChannel is null) 
                 return EmbedManager.ReplySimple("Aviso", "Você precisa estar em um canal de voz para isso.");
 
@@ -261,7 +348,7 @@ namespace Giyu.Core.Managers
             }
         }
 
-        public static async Task<Embed> ListAsync(SocketCommandContext context)
+        public static Embed ListAsync(SocketCommandContext context)
         {
             try
             {
