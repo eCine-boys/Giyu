@@ -1,8 +1,5 @@
 ﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace Giyu.Core.Managers
 {
@@ -41,5 +38,7 @@ namespace Giyu.Core.Managers
         public string Token { get; private set; }
         [JsonProperty("prefix")]
         public string Prefix { get; private set; }
+        [JsonProperty("autoplay")]
+        public bool Autoplay { get; set; }
     }
 }

@@ -5,11 +5,13 @@ using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Victoria;
 using Victoria.Enums;
 using Victoria.EventArgs;
+using Victoria.Filters;
 using Victoria.Responses.Search;
 
 namespace Giyu.Core.Managers
@@ -17,7 +19,6 @@ namespace Giyu.Core.Managers
     public static class AudioManager
     {
         private static readonly LavaNode _lavaNode = ServiceManager.Provider.GetRequiredService<LavaNode>();
-
         public static async Task<string> JoinAsync(IGuild guild, IVoiceState voiceState, ITextChannel textChannel)
         {
             if (_lavaNode.HasPlayer(guild)) return "Já estou conectado a um canal de voz.";
@@ -35,7 +36,7 @@ namespace Giyu.Core.Managers
             }
         }
 
-        public static async Task<Embed> PlayAsync(SocketGuildUser user, SocketGuild guild, string query, SocketInteractionContext context)
+        public static async Task<Embed> PlayAsync(SocketGuildUser user, SocketGuild guild, string query, dynamic context)
         {
             if (user.VoiceChannel is null)
                 return EmbedManager.ReplySimple("Aviso", "Você precisa estar em um canal de voz para isso.");
@@ -44,9 +45,18 @@ namespace Giyu.Core.Managers
             {
                 try
                 {
-                    if (!!(context.Channel is ITextChannel channel))
+                    if(context is SocketCommandContext CommandCtx)
                     {
-                        await _lavaNode.JoinAsync(user.VoiceChannel, channel);
+                        if (!!(CommandCtx.Channel is ITextChannel channel))
+                        {
+                            await _lavaNode.JoinAsync(user.VoiceChannel, channel);
+                        }
+                    } else if(context is SocketInteractionContext InteractionCtx)
+                    {
+                        if (!!(InteractionCtx.Channel is ITextChannel channel))
+                        {
+                            await _lavaNode.JoinAsync(user.VoiceChannel, channel);
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -62,8 +72,8 @@ namespace Giyu.Core.Managers
                 LavaTrack track;
 
                 SearchResponse search = Uri.IsWellFormedUriString(query, UriKind.Absolute) ?
-                    await _lavaNode.SearchAsync(SearchType.YouTubeMusic, query)
-                    : await _lavaNode.SearchYouTubeAsync(query);
+                    await _lavaNode.SearchYouTubeAsync(query)
+                    : await _lavaNode.SearchAsync(SearchType.Direct, query);
 
                 if (search.Status == SearchStatus.NoMatches)
                     return EmbedManager.ReplySimple("Aviso", $"Não foram encontrados resultados para: {query}");
@@ -123,6 +133,7 @@ namespace Giyu.Core.Managers
 
         }
 
+        /*
         public static async Task<Embed> PlayAsync(SocketGuildUser user, IGuild guild, string query, SocketCommandContext context)
         {
             if (user.VoiceChannel is null) 
@@ -214,6 +225,8 @@ namespace Giyu.Core.Managers
             }
 
         }
+
+        */
 
         public static async Task<string> LeaveAsync(IGuild guild)
         {
@@ -348,13 +361,13 @@ namespace Giyu.Core.Managers
             }
         }
 
-        public static Embed ListAsync(SocketCommandContext context)
+        public static Embed ListAsync(IGuild guild)
         {
             try
             {
                 StringBuilder ListBuilder = new StringBuilder();
 
-                LavaPlayer player = _lavaNode.GetPlayer(context.Guild);
+                LavaPlayer player = _lavaNode.GetPlayer(guild);
 
                 if (player == null)
                     return EmbedManager.ReplySimple("Queue", "Não foi possível obter o player.");
@@ -389,14 +402,55 @@ namespace Giyu.Core.Managers
             }
         }
 
+        public static async Task TryAutoPlayNext(TrackEndedEventArgs args)
+        {
+            string search = $"https://www.youtube.com/watch?v={args.Track.Id}&list=RD{args.Track.Id}";
+
+            SearchResponse response = await _lavaNode.SearchAsync(SearchType.YouTubeMusic, search);
+
+            if (response.Status == SearchStatus.NoMatches)
+                return;
+
+            LavaTrack _track = response.Tracks.ToArray()[1];
+
+            await args.Player.PlayAsync(_track);
+
+            EmbedBuilder embed = new EmbedBuilder();
+
+            embed
+                .WithTitle(_track.Title)
+                .AddField("Autor", _track.Author)
+                .AddField("Duração", _track.Duration)
+                .AddField("Link", _track.Url)
+                .WithThumbnailUrl(await _track.FetchArtworkAsync())
+                //.WithImageUrl(await track.FetchArtworkAsync())
+                .WithCurrentTimestamp()
+                .WithColor(EmbedManager.GetRandomColor())
+                .WithFooter(x =>
+                {
+                    x.IconUrl = args.Player.TextChannel.Guild.IconUrl;
+                    x.Text = "Tocando agora";
+                });
+
+            await args.Player.TextChannel.SendMessageAsync(embed: embed.Build());
+        }
+
         public static async Task TrackEnded(TrackEndedEventArgs args)
         {
             LogManager.Log("DEBUG", args.Reason.ToString());
 
             if (!args.Player.Queue.TryDequeue(out var queueable))
             {
-                await args.Player.TextChannel.SendMessageAsync("Sem mais músicas para tocar.");
-                return;
+                try
+                {
+                    await TryAutoPlayNext(args);
+
+                    return;
+                } catch(Exception ex)
+                {
+                    LogManager.Log("ERROR", ex.Message);
+                }
+                
             }
 
             if (queueable is LavaTrack track)
@@ -404,6 +458,8 @@ namespace Giyu.Core.Managers
                 await args.Player.PlayAsync(queueable);
 
                 await args.Player.TextChannel.SendMessageAsync($"Tocando agora: {track.Title}");
+
+                return;
             } else
             {
                 // await args.Player.TextChannel.SendMessageAsync("Próximo item na playlist não é uma música.");

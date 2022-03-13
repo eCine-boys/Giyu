@@ -10,6 +10,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Victoria;
 using Victoria.EventArgs;
+using Victoria.Responses.Search;
 
 namespace Giyu.Core.Managers
 {
