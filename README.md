@@ -9,7 +9,6 @@ Discord Bot w/ LavaLink server.
 
 ## Steps
 
-- 
 ```terminal
 ex@root ~$ dotnet restore
 ```
