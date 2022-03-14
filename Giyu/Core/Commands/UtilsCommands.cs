@@ -1,10 +1,6 @@
 ﻿
 using Discord;
 using Discord.Commands;
-using Discord.WebSocket;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 
@@ -16,10 +12,14 @@ namespace Giyu.Core.Commands
         [RequireUserPermission(GuildPermission.ManageMessages)]
         public async Task PurgeChat(uint amount)
         {
-            //var messages = await Context.Channel.GetMessagesAsync((int)amount + 1).Flatten();
+            var messages = await Context.Channel.GetMessagesAsync((int)amount + 1).FlattenAsync();
 
-            //await Context.Channel.DeleteMessageAsync(messages);
-            //await ReplyAsync($"{amount} apagadas.");
+            foreach(var message in messages)
+            {
+                await Context.Channel.DeleteMessageAsync(message.Id);
+            }
+
+            await ReplyAsync($"{amount} apagadas.");
         }
     }
 }

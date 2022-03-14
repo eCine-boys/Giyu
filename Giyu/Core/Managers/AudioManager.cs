@@ -82,62 +82,60 @@ namespace Giyu.Core.Managers
 
                 var thumb_image = await track.FetchArtworkAsync();
 
+                if (string.IsNullOrEmpty(thumb_image))
+                {
+                    thumb_image = $"https://i.ytimg.com/vi/{track.Id}/hqdefault.jpg";
+                }
+
                 if (player.Track != null && player.PlayerState is PlayerState.Playing || player.PlayerState is PlayerState.Paused)
                 {
                     player.Queue.Enqueue(track);
                     LogManager.Log("AUDIO", "Música adicionada a playlist.");
                     EmbedBuilder embed_add = new EmbedBuilder();
 
-                    if (string.IsNullOrEmpty(thumb_image))
-                    {
-                        thumb_image = $"https://i.ytimg.com/vi/{track.Id}/hqdefault.jpg";
-                    }
-
                     embed_add
-                        .WithTitle(track.Title)
-                        .WithUrl(track.Url)
+                        .WithAuthor(Author =>
+                        {
+                            Author.WithIconUrl("https://i0.wp.com/minecraftmodpacks.net/wp-content/uploads/2017/11/a47764f58bdb6731fd0a903697af9d98.png?resize=150%2C150");
+                            Author.WithName("Adicionada na playlist");
+                        })
+                        .WithDescription($"[{track.Title}]({track.Url})")
                         .AddField("Autor", track.Author, true)
                         .AddField("Duração", track.Duration, true)
-                        //.AddField("Link", track.Url, true)
                         .WithThumbnailUrl(thumb_image)
-                        .WithImageUrl("https://i0.wp.com/minecraftmodpacks.net/wp-content/uploads/2017/11/a47764f58bdb6731fd0a903697af9d98.png?resize=150%2C150")
-                        //.WithImageUrl(await track.FetchArtworkAsync())
                         .WithCurrentTimestamp()
                         .WithColor(EmbedManager.GetRandomColor())
                         .WithFooter(x =>
                         {
                             x.IconUrl = guild.IconUrl;
-                            x.Text = "Adicionada na playlist";
+                            x.Text = user.Username;
                         });
 
                     return embed_add.Build();
                 }
 
                 await player.PlayAsync(track);
+
                 LogManager.Log("AUDIO", $"Tocando agora: {track.Title}.");
 
                 EmbedBuilder embed = new EmbedBuilder();
 
-                if (string.IsNullOrEmpty(thumb_image))
-                {
-                    thumb_image = $"https://i.ytimg.com/vi/{track.Id}/hqdefault.jpg";
-                }
-
                 embed
-                    .WithTitle(track.Title)
-                    .WithUrl(track.Url)
+                    .WithAuthor(Author =>
+                    {
+                        Author.WithIconUrl("https://i0.wp.com/minecraftmodpacks.net/wp-content/uploads/2017/11/a47764f58bdb6731fd0a903697af9d98.png?resize=150%2C150");
+                        Author.WithName("Tocando agora");
+                    })
+                    .WithDescription($"[{track.Title}]({track.Url})")
                     .AddField("Autor", track.Author, true)
                     .AddField("Duração", track.Duration, true)
-                        //.AddField("Link", track.Url)
                     .WithThumbnailUrl(thumb_image)
-                        //.WithImageUrl(await track.FetchArtworkAsync())
-                    .WithImageUrl("https://i0.wp.com/minecraftmodpacks.net/wp-content/uploads/2017/11/a47764f58bdb6731fd0a903697af9d98.png?resize=150%2C150")
                     .WithCurrentTimestamp()
                     .WithColor(EmbedManager.GetRandomColor())
                     .WithFooter(x =>
                     {
                         x.IconUrl = guild.IconUrl;
-                        x.Text = "Tocando agora";
+                        x.Text = user.Username;
                     });
 
                 return embed.Build();
@@ -146,103 +144,7 @@ namespace Giyu.Core.Managers
             {
                 throw ex;
             }
-
         }
-
-        /*
-        public static async Task<Embed> PlayAsync(SocketGuildUser user, IGuild guild, string query, SocketCommandContext context)
-        {
-            if (user.VoiceChannel is null) 
-                return EmbedManager.ReplySimple("Aviso", "Você precisa estar em um canal de voz para isso.");
-
-            if (!_lavaNode.HasPlayer(guild))
-            {
-                try
-                {
-                    if (!!(context.Channel is ITextChannel channel))
-                    {
-                        await _lavaNode.JoinAsync(user.VoiceChannel, channel);
-
-                        Emoji likeEmote = new Emoji("👍");
-
-                        _ = context.Message.AddReactionAsync(likeEmote);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    return EmbedManager.ReplySimple("Erro", $"{ex.Message}");
-                }
-            }
-
-            try
-            {
-                LavaPlayer player = _lavaNode.GetPlayer(guild);
-
-                LavaTrack track;
-
-                SearchResponse search = Uri.IsWellFormedUriString(query, UriKind.Absolute) ?
-                    await _lavaNode.SearchAsync(SearchType.YouTubeMusic, query)
-                    : await _lavaNode.SearchYouTubeAsync(query);
-
-                if (search.Status == SearchStatus.NoMatches)
-                    return EmbedManager.ReplySimple("Aviso", $"Não foram encontrados resultados para: {query}");
-
-                track = search.Tracks.FirstOrDefault();
-
-                if(player.Track != null && player.PlayerState is PlayerState.Playing || player.PlayerState is PlayerState.Paused)
-                {
-                    player.Queue.Enqueue(track);
-                    LogManager.Log("AUDIO", "Música adicionada a playlist.");
-                    EmbedBuilder embed_add = new EmbedBuilder();
-
-                    embed_add
-                        .WithTitle(track.Title)
-                        .AddField("Autor", track.Author)
-                        .AddField("Duração", track.Duration)
-                        .AddField("Link", track.Url)
-                        .WithThumbnailUrl(await track.FetchArtworkAsync())
-                        //.WithImageUrl(await track.FetchArtworkAsync())
-                        .WithCurrentTimestamp()
-                        .WithColor(EmbedManager.GetRandomColor())
-                        .WithFooter(x =>
-                        {
-                            x.IconUrl = guild.IconUrl;
-                            x.Text = "Adicionada na playlist";
-                        });
-
-                    return embed_add.Build();
-                }
-
-                await player.PlayAsync(track);
-                LogManager.Log("AUDIO", $"Tocando agora: {track.Title}.");
-
-                EmbedBuilder embed = new EmbedBuilder();
-
-                embed
-                    .WithTitle(track.Title)
-                    .AddField("Autor", track.Author)
-                    .AddField("Duração", track.Duration)
-                    .AddField("Link", track.Url)
-                    .WithThumbnailUrl(await track.FetchArtworkAsync())
-                    //.WithImageUrl(await track.FetchArtworkAsync())
-                    .WithCurrentTimestamp()
-                    .WithColor(EmbedManager.GetRandomColor())
-                    .WithFooter(x =>
-                    {
-                        x.IconUrl = guild.IconUrl;
-                        x.Text = "Tocando agora";
-                    });
-
-                return embed.Build();
-            } 
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-
-        }
-
-        */
 
         public static async Task<string> LeaveAsync(IGuild guild)
         {
@@ -433,19 +335,30 @@ namespace Giyu.Core.Managers
 
             EmbedBuilder embed = new EmbedBuilder();
 
+            var thumb_image = await _track.FetchArtworkAsync();
+
+            if (string.IsNullOrEmpty(thumb_image))
+            {
+                thumb_image = $"https://i.ytimg.com/vi/{_track.Id}/hqdefault.jpg";
+            }
+
+
             embed
-                .WithTitle(_track.Title)
-                .AddField("Autor", _track.Author)
-                .AddField("Duração", _track.Duration)
-                .AddField("Link", _track.Url)
-                .WithThumbnailUrl(await _track.FetchArtworkAsync())
-                //.WithImageUrl(await track.FetchArtworkAsync())
-                .WithCurrentTimestamp()
-                .WithColor(EmbedManager.GetRandomColor())
+                    .WithAuthor(Author =>
+                    {
+                        Author.WithIconUrl("https://i0.wp.com/minecraftmodpacks.net/wp-content/uploads/2017/11/a47764f58bdb6731fd0a903697af9d98.png?resize=150%2C150");
+                        Author.WithName("Tocando agora");
+                    })
+                    .WithDescription($"[{_track.Title}]({_track.Url})")
+                    .AddField("Autor", _track.Author, true)
+                    .AddField("Duração", _track.Duration, true)
+                    .WithThumbnailUrl(thumb_image)
+                    .WithCurrentTimestamp()
+                    .WithColor(EmbedManager.GetRandomColor())
                 .WithFooter(x =>
                 {
                     x.IconUrl = args.Player.TextChannel.Guild.IconUrl;
-                    x.Text = "Tocando agora";
+                    x.Text = $"Tocando em {args.Player.VoiceChannel.Name}";
                 });
 
             await args.Player.TextChannel.SendMessageAsync(embed: embed.Build());
@@ -473,7 +386,36 @@ namespace Giyu.Core.Managers
             {
                 await args.Player.PlayAsync(queueable);
 
-                await args.Player.TextChannel.SendMessageAsync($"Tocando agora: {track.Title}");
+                EmbedBuilder embed = new EmbedBuilder();
+
+                var guild =  args.Player.TextChannel.Guild;
+
+                var thumb_image = await track.FetchArtworkAsync();
+
+                if (string.IsNullOrEmpty(thumb_image))
+                {
+                    thumb_image = $"https://i.ytimg.com/vi/{track.Id}/hqdefault.jpg";
+                }
+
+                embed
+                    .WithAuthor(Author =>
+                    {
+                        Author.WithIconUrl("https://i0.wp.com/minecraftmodpacks.net/wp-content/uploads/2017/11/a47764f58bdb6731fd0a903697af9d98.png?resize=150%2C150");
+                        Author.WithName("Tocando agora");
+                    })
+                    .WithDescription($"[{track.Title}]({track.Url})")
+                    .AddField("Autor", track.Author, true)
+                    .AddField("Duração", track.Duration, true)
+                    .WithThumbnailUrl(thumb_image)
+                    .WithCurrentTimestamp()
+                    .WithColor(EmbedManager.GetRandomColor())
+                    .WithFooter(x =>
+                    {
+                        x.IconUrl = guild.IconUrl;
+                        x.Text = $"Tocando agora em **{args.Player.VoiceChannel.Name}**";
+                    });
+
+                await args.Player.TextChannel.SendMessageAsync(embed: embed.Build());
 
                 return;
             } else
