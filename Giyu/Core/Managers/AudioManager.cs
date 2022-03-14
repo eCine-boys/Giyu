@@ -73,12 +73,14 @@ namespace Giyu.Core.Managers
 
                 SearchResponse search = Uri.IsWellFormedUriString(query, UriKind.Absolute) ?
                     await _lavaNode.SearchYouTubeAsync(query)
-                    : await _lavaNode.SearchAsync(SearchType.Direct, query);
+                    : await _lavaNode.SearchAsync(SearchType.YouTubeMusic, query);
 
                 if (search.Status == SearchStatus.NoMatches)
                     return EmbedManager.ReplySimple("Aviso", $"Não foram encontrados resultados para: {query}");
 
                 track = search.Tracks.FirstOrDefault();
+
+                var thumb_image = await track.FetchArtworkAsync();
 
                 if (player.Track != null && player.PlayerState is PlayerState.Playing || player.PlayerState is PlayerState.Paused)
                 {
@@ -86,12 +88,19 @@ namespace Giyu.Core.Managers
                     LogManager.Log("AUDIO", "Música adicionada a playlist.");
                     EmbedBuilder embed_add = new EmbedBuilder();
 
+                    if (string.IsNullOrEmpty(thumb_image))
+                    {
+                        thumb_image = $"https://i.ytimg.com/vi/{track.Id}/hqdefault.jpg";
+                    }
+
                     embed_add
                         .WithTitle(track.Title)
-                        .AddField("Autor", track.Author)
-                        .AddField("Duração", track.Duration)
-                        .AddField("Link", track.Url)
-                        .WithThumbnailUrl(await track.FetchArtworkAsync())
+                        .WithUrl(track.Url)
+                        .AddField("Autor", track.Author, true)
+                        .AddField("Duração", track.Duration, true)
+                        //.AddField("Link", track.Url, true)
+                        .WithThumbnailUrl(thumb_image)
+                        .WithImageUrl("https://i0.wp.com/minecraftmodpacks.net/wp-content/uploads/2017/11/a47764f58bdb6731fd0a903697af9d98.png?resize=150%2C150")
                         //.WithImageUrl(await track.FetchArtworkAsync())
                         .WithCurrentTimestamp()
                         .WithColor(EmbedManager.GetRandomColor())
@@ -109,13 +118,20 @@ namespace Giyu.Core.Managers
 
                 EmbedBuilder embed = new EmbedBuilder();
 
+                if (string.IsNullOrEmpty(thumb_image))
+                {
+                    thumb_image = $"https://i.ytimg.com/vi/{track.Id}/hqdefault.jpg";
+                }
+
                 embed
                     .WithTitle(track.Title)
-                    .AddField("Autor", track.Author)
-                    .AddField("Duração", track.Duration)
-                    .AddField("Link", track.Url)
-                    .WithThumbnailUrl(await track.FetchArtworkAsync())
-                    //.WithImageUrl(await track.FetchArtworkAsync())
+                    .WithUrl(track.Url)
+                    .AddField("Autor", track.Author, true)
+                    .AddField("Duração", track.Duration, true)
+                        //.AddField("Link", track.Url)
+                    .WithThumbnailUrl(thumb_image)
+                        //.WithImageUrl(await track.FetchArtworkAsync())
+                    .WithImageUrl("https://i0.wp.com/minecraftmodpacks.net/wp-content/uploads/2017/11/a47764f58bdb6731fd0a903697af9d98.png?resize=150%2C150")
                     .WithCurrentTimestamp()
                     .WithColor(EmbedManager.GetRandomColor())
                     .WithFooter(x =>
@@ -443,7 +459,7 @@ namespace Giyu.Core.Managers
             {
                 try
                 {
-                    await TryAutoPlayNext(args);
+                    // await TryAutoPlayNext(args);
 
                     return;
                 } catch(Exception ex)
