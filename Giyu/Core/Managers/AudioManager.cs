@@ -73,7 +73,7 @@ namespace Giyu.Core.Managers
 
                 SearchResponse search = Uri.IsWellFormedUriString(query, UriKind.Absolute) ?
                     await _lavaNode.SearchYouTubeAsync(query)
-                    : await _lavaNode.SearchAsync(SearchType.YouTubeMusic, query);
+                    : await _lavaNode.SearchAsync(SearchType.YouTube, query);
 
                 if (search.Status == SearchStatus.NoMatches)
                     return EmbedManager.ReplySimple("Aviso", $"Não foram encontrados resultados para: {query}");
@@ -315,6 +315,63 @@ namespace Giyu.Core.Managers
 
             }
             catch(Exception ex)
+            {
+                return EmbedManager.ReplySimple("Error", $"{ex.Message}");
+            }
+        }
+
+        public static async Task<dynamic> SearchAsync(dynamic context, string query)
+        {
+            try
+            {
+                StringBuilder ListBuilder = new StringBuilder();
+
+               // if (player == null)
+                //    return EmbedManager.ReplySimple("Queue", "Não foi possível obter o player.");
+
+               // var builder = new ComponentBuilder().WithButton("Just the two of us", customId: "kZG-q1X7fbE", ButtonStyle.Primary, row: 0);
+
+                var selectBuilder = new SelectMenuBuilder().WithCustomId("select-song").WithPlaceholder("Selecione uma música");
+
+                var searchResponse = await _lavaNode.SearchYouTubeAsync(query);
+
+                if (searchResponse.Status is SearchStatus.NoMatches)
+                    return EmbedManager.ReplySimple("Erro", $"Sem resultados para {query}");
+
+                foreach(var track in searchResponse.Tracks)
+                {
+                    selectBuilder.AddOption(track.Title, track.Id, track.Author);
+                }
+
+                var songList = new ComponentBuilder().WithSelectMenu(selectBuilder);
+
+                return songList.Build();
+
+                //if (player.PlayerState is PlayerState.Playing || player.PlayerState is PlayerState.Paused)
+                //{
+                //    if (player.Queue.Count < 1 && player.Track != null)
+                //    {
+                //        return EmbedManager.ReplySimple("Tocando agora", $"{player.Track.Author} - {player.Track.Title}");
+                //    }
+                //    else
+                //    {
+                //        int trackPosNum = 2;
+                //        foreach (LavaTrack track in player.Queue)
+                //        {
+                //            ListBuilder.Append($"{trackPosNum}: [{track.Title}]({track.Url}) - {track.Id}\n");
+                //            trackPosNum++;
+                //        }
+
+                //        return EmbedManager.ReplySimple("Queue", $"Tocando agora: [{player.Track.Title}]({player.Track.Url}) \n{ListBuilder}");
+                //    }
+                //}
+                //else
+                //{
+                //    return EmbedManager.ReplySimple("Erro", "O Bot deve estar parado ou pausado para isso.");
+                //}
+
+            }
+            catch (Exception ex)
             {
                 return EmbedManager.ReplySimple("Error", $"{ex.Message}");
             }

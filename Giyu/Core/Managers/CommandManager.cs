@@ -1,9 +1,5 @@
 ﻿using Discord.Commands;
-using Discord.Interactions;
-using System;
-using System.Collections.Generic;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Giyu.Core.Managers

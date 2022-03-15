@@ -119,6 +119,8 @@ namespace Giyu.Core.Managers
 
                 _interactionService.SlashCommandExecuted += SlashCommandExecuted;
 
+                _client.SelectMenuExecuted += SelectMenuExecuted;
+
                 await _lavaNode.ConnectAsync();
             } catch (Exception ex)
             {
@@ -131,10 +133,17 @@ namespace Giyu.Core.Managers
             await _client.SetGameAsync($"Prefix: {ConfigManager.Config.Prefix}", null, Discord.ActivityType.Listening);
         }
 
-     /* private static async Task SlashCommandHandler(SocketSlashCommand command) // Controlar comandos futuramente;
+        private static Task SelectMenuExecuted(SocketMessageComponent interaction)
         {
-            await command.RespondAsync($"Executado {command.Data.Name}");
-        } */
+            LogManager.Log("SELECT", $"[{interaction.Data.CustomId}] => [{interaction.Data.Value}]");
+
+            return Task.CompletedTask;
+        }
+
+        /* private static async Task SlashCommandHandler(SocketSlashCommand command) // Controlar comandos futuramente;
+           {
+               await command.RespondAsync($"Executado {command.Data.Name}");
+           } */
 
         private static async Task OnTrackException(TrackExceptionEventArgs arg)
         {

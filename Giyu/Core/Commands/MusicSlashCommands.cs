@@ -1,4 +1,5 @@
-﻿using Discord.Commands;
+﻿using Discord;
+using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Giyu.Core.Managers;
@@ -36,6 +37,21 @@ namespace Giyu.Core.Commands
         [SlashCommand("queue", "Lista as músicas da playlist atual caso haja uma.")]
         public async Task ListCommand()
             => await RespondAsync(embed: AudioManager.ListAsync(Context.Guild));
+
+        [SlashCommand("search", "Pesquisa uma música por uma palavra-chave.")]
+        public async Task SearchCommand([Remainder] string search) {
+            dynamic resp = await AudioManager.SearchAsync(Context, search);
+
+            if(resp is MessageComponent _component)
+            {
+                await RespondAsync(components: _component);
+                return;
+            } else if(resp is Embed _embed)
+            {
+
+                await RespondAsync(embed: _embed);
+            }
+        }
 
         [Alias("vol")]
         [SlashCommand("volume", "Altera o volume da música em reprodução.")]
