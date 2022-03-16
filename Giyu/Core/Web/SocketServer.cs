@@ -1,13 +1,9 @@
-﻿using Giyu.Core.Managers;
+﻿using WatsonTcp;
+using Giyu.Core.Managers;
 using System;
-using System.Collections.Generic;
-using System.Net.Sockets;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.RegularExpressions;
-using Alchemy;
-using Alchemy.Classes;
 using System.Net;
+using System.Collections.Generic;
+using System.Text;
 
 namespace Giyu.Core.Web
 {
@@ -15,36 +11,36 @@ namespace Giyu.Core.Web
     {
         public static void Init(int port, IPAddress ip)
         {
-            var SocketServer = new WebSocketServer(port, ip)
-            {
-                OnConnected = OnConnected,
-                OnReceive = OnReceive,
-                OnConnect = OnConnect,
-                OnDisconnect = OnDisconnect,
-                TimeOut = new TimeSpan(0, 10, 0)
-            };
+            WatsonTcpServer TServer = new WatsonTcpServer(ip.ToString(), port);
 
-            SocketServer.Start();
+            TServer.Events.ClientConnected += OnConnected;
+            TServer.Events.MessageReceived += MessageReceived;
+            TServer.Events.ClientDisconnected += ClientDisconnected;
+            TServer.Callbacks.SyncRequestReceived = SyncRequestReceived;
+
+            TServer.Start();
+
+            IEnumerable<string> clients = TServer.ListClients();
         }
 
-        private static void OnDisconnect(UserContext context)
+        private static SyncResponse SyncRequestReceived(SyncRequest arg)
         {
-            LogManager.Log("WS-GIYU", context.Data.ToString());
+            throw new NotImplementedException();
         }
 
-        private static void OnConnect(UserContext context)
+        private static void ClientDisconnected(object sender, DisconnectionEventArgs e)
         {
-            LogManager.Log("WS-GIYU", $"Client connect: {context.ClientAddress.ToString()}");
+            throw new NotImplementedException();
         }
 
-        private static void OnReceive(UserContext context)
+        private static void MessageReceived(object sender, MessageReceivedEventArgs e)
         {
-            LogManager.Log("WS-GIYU", context.Data.ToString());
+            LogManager.Log("[GIYU-WS] MessageReceived", $"[{e.IpPort}]: {Encoding.UTF8.GetString(e.Data)}");
         }
 
-        private static void OnConnected(UserContext context)
+        private static void OnConnected(object sender, ConnectionEventArgs e)
         {
-            Console.WriteLine("Client Connection From : " + context.ClientAddress.ToString());
+            LogManager.Log("[GIYU-WS] OnConnected", $"Client connected: {e.IpPort}");
         }
     }
 }
