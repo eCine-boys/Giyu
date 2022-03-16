@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Alchemy" Version="2.2.1" />
     <PackageReference Include="Discord.Net" Version="3.4.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
     <PackageReference Include="Victoria" Version="5.2.3" />
