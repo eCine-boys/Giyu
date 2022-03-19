@@ -377,6 +377,32 @@ namespace Giyu.Core.Managers
             }
         }
 
+        public static Embed RemoveAsync(dynamic context, int songIndex)
+        {
+            IGuild guild = context.guild ?? null;
+
+            if (guild is null)
+                return EmbedManager.ReplyError("Guild não encontrada.");
+
+            if(_lavaNode.HasPlayer(guild))
+            {
+                LavaPlayer player = _lavaNode.GetPlayer(guild);
+
+                if (player == null)
+                    return EmbedManager.ReplySimple("Queue", "Não foi possível obter o player.");
+
+                LavaTrack track = player.Queue.RemoveAt(songIndex);
+
+                if (track is null)
+                    return EmbedManager.ReplySimple("Queue", "Música não encontrada pelo index especificado");
+
+                return EmbedManager.ReplySimple("Queue", $"{track.Title} removida da playlist.");
+            } else
+            {
+                return EmbedManager.ReplyError("Player não conectado");
+            }
+        }
+
         public static async Task TryAutoPlayNext(TrackEndedEventArgs args)
         {
             string search = $"https://www.youtube.com/watch?v={args.Track.Id}&list=RD{args.Track.Id}";
@@ -469,7 +495,7 @@ namespace Giyu.Core.Managers
                     .WithFooter(x =>
                     {
                         x.IconUrl = guild.IconUrl;
-                        x.Text = $"Tocando agora em **{args.Player.VoiceChannel.Name}**";
+                        x.Text = $"Tocando agora em {args.Player.VoiceChannel.Name} 🔊";
                     });
 
                 await args.Player.TextChannel.SendMessageAsync(embed: embed.Build());

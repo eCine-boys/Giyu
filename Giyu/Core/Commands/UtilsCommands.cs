@@ -16,6 +16,7 @@ namespace Giyu.Core.Commands
 
             foreach(var message in messages)
             {
+                await Task.Delay(500);
                 await Context.Channel.DeleteMessageAsync(message.Id);
             }
 
