@@ -53,10 +53,17 @@ namespace Giyu.Core.Commands
             }
         }
 
+        [SlashCommand("remove", "Remove uma música da playlist de acordo com a posição passada.")]
+        public async Task RemoveCommand([Remainder] int position)
+            => await RespondAsync(embed: AudioManager.RemoveAsync(Context, position));
+
+
         [Alias("vol")]
         [SlashCommand("volume", "Altera o volume da música em reprodução.")]
         public async Task VolumeCommand([Remainder] ushort volume)
             => await RespondAsync(embed: await AudioManager.SetVolumeAsync(Context.Guild, volume));
+
+
     }
 
 }

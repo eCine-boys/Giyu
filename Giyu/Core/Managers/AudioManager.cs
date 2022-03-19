@@ -195,6 +195,8 @@ namespace Giyu.Core.Managers
                 if (player is null)
                     return $"Não há música ativa no momento.";
 
+                player.Queue.Clear();
+
                 await player.StopAsync();
 
                 return $"Audio parado, playlist removida. 👍";
@@ -301,7 +303,7 @@ namespace Giyu.Core.Managers
                         int trackPosNum = 2;
                         foreach(LavaTrack track in player.Queue)
                         {
-                            ListBuilder.Append($"{trackPosNum}: [{track.Title}]({track.Url}) - {track.Id}\n");
+                            ListBuilder.Append($"{trackPosNum}: [{track.Title}]({track.Url})\n");
                             trackPosNum++;
                         }
 
@@ -379,14 +381,13 @@ namespace Giyu.Core.Managers
 
         public static Embed RemoveAsync(dynamic context, int songIndex)
         {
-            IGuild guild = context.guild ?? null;
 
-            if (guild is null)
+            if (context.guild is null)
                 return EmbedManager.ReplyError("Guild não encontrada.");
 
-            if(_lavaNode.HasPlayer(guild))
+            if(_lavaNode.HasPlayer(context.guild))
             {
-                LavaPlayer player = _lavaNode.GetPlayer(guild);
+                LavaPlayer player = _lavaNode.GetPlayer(context.guild);
 
                 if (player == null)
                     return EmbedManager.ReplySimple("Queue", "Não foi possível obter o player.");
