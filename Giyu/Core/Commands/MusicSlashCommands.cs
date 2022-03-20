@@ -55,7 +55,7 @@ namespace Giyu.Core.Commands
 
         [SlashCommand("remove", "Remove uma música da playlist de acordo com a posição passada.")]
         public async Task RemoveCommand([Remainder] int position)
-            => await RespondAsync(embed: await AudioManager.RemoveAsync(Context.Guild, position));
+            => await RespondAsync(embed: AudioManager.Remove(Context.Guild, position));
 
 
         [Alias("vol")]

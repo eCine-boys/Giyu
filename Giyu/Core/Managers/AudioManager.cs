@@ -1,17 +1,14 @@
 ﻿using Discord;
-using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Linq;
-using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Victoria;
 using Victoria.Enums;
 using Victoria.EventArgs;
-using Victoria.Filters;
 using Victoria.Responses.Search;
 
 namespace Giyu.Core.Managers
@@ -330,34 +327,26 @@ namespace Giyu.Core.Managers
 
         public static async Task<string> SkipTrackAsync(IGuild guild)
         {
+
+            if (!_lavaNode.TryGetPlayer(guild, out LavaPlayer player))
+            {
+                return "Não foi possível obter o player.";
+            }
+
+            if (player.PlayerState != PlayerState.Playing)
+            {
+                return "Não se pode pular quando não há nada tocando.";
+            }
+
             try
             {
-                var player = _lavaNode.GetPlayer(guild);
+                (LavaTrack oldTrack, LavaTrack currentTrack) = await player.SkipAsync();
 
-                if (player == null)
-                    return $"Não foi possível obter o player.";
-
-                if (player.Queue.Count < 1)
-                {
-                    return $"Não não há próximas músicas para pular.";
-                }
-                else
-                {
-                    try
-                    {
-                        (LavaTrack skipped, LavaTrack track) = await player.SkipAsync();
-
-                        return $"{skipped.Title} foi pulada.";
-                    }
-                    catch (Exception ex)
-                    {
-                        return $"Skip {ex.Message}";
-                    }
-                }
+                return $"{oldTrack.Title} foi pulada.";
             }
             catch (Exception ex)
             {
-                return $"Skip {ex.Message}";
+                return $"{ex.Message}";
             }
         }
 
@@ -438,7 +427,7 @@ namespace Giyu.Core.Managers
             }
         }
 
-        public static async Task<Embed> RemoveAsync(IGuild guild, int songIndex)
+        public static Embed Remove(IGuild guild, int songIndex)
         {
             if (songIndex < 2)
             {
@@ -534,31 +523,36 @@ namespace Giyu.Core.Managers
         {
             LogManager.Log("DEBUG", args.Reason.ToString());
 
-            if (!args.Player.Queue.TryDequeue(out var queueable))
+            if (args.Reason != TrackEndReason.Finished)
+            {
+                return;
+            }
+
+            var player = args.Player;
+
+            if (!player.Queue.TryDequeue(out var lavaTrack))
             {
                 //await args.Player.TextChannel.SendMessageAsync("Fim da playlist.");
                 return;
             }
 
-            if(!(queueable is LavaTrack track))
+            if(lavaTrack is null)
             {
-                await args.Player.TextChannel.SendMessageAsync("Próximo item na playlist não é uma música.");
+                // Próximo item na playlist não é uma música;
                 return;
             }
 
-            LogManager.Log("TOCANDO AGORA", track.Title);
-
-            await args.Player.PlayAsync(track);
+            await args.Player.PlayAsync(lavaTrack);
 
             EmbedBuilder embed = new EmbedBuilder();
 
             var guild = args.Player.TextChannel.Guild;
 
-            var thumb_image = await track.FetchArtworkAsync();
+            var thumb_image = await lavaTrack.FetchArtworkAsync();
 
             if (string.IsNullOrEmpty(thumb_image))
             {
-                thumb_image = $"https://i.ytimg.com/vi/{track.Id}/hqdefault.jpg";
+                thumb_image = $"https://i.ytimg.com/vi/{lavaTrack.Id}/hqdefault.jpg";
             }
 
             embed
@@ -567,9 +561,9 @@ namespace Giyu.Core.Managers
                     Author.WithIconUrl("https://i0.wp.com/minecraftmodpacks.net/wp-content/uploads/2017/11/a47764f58bdb6731fd0a903697af9d98.png?resize=150%2C150");
                     Author.WithName("Tocando agora");
                 })
-                .WithDescription($"[{track.Title}]({track.Url})")
-                .AddField("Autor", track.Author, true)
-                .AddField("Duração", track.Duration, true)
+                .WithDescription($"[{lavaTrack.Title}]({lavaTrack.Url})")
+                .AddField("Autor", lavaTrack.Author, true)
+                .AddField("Duração", lavaTrack.Duration, true)
                 .WithThumbnailUrl(thumb_image)
                 .WithCurrentTimestamp()
                 .WithColor(EmbedManager.GetRandomColor())
