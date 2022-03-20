@@ -4,7 +4,7 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using Giyu.Core.Managers;
 using Microsoft.Extensions.DependencyInjection;
-using System.Net;
+using System;
 using System.Threading.Tasks;
 using Victoria;
 
@@ -54,7 +54,10 @@ namespace Giyu.Core
 
         public async Task MainAsync()
         {
-            if (string.IsNullOrWhiteSpace(ConfigManager.Config.Token)) return;
+            if (string.IsNullOrWhiteSpace(ConfigManager.Config.Token))
+            {
+                throw new ArgumentNullException("Bot Token está vazio ou não existe.");
+            };
 
             await CommandManager.LoadCommandsAsync();
             await EventManager.LoadCommands();

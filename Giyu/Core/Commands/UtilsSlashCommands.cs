@@ -1,9 +1,6 @@
 ﻿using Discord;
 using Discord.Interactions;
 using Giyu.Core.Managers;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Giyu.Core.Commands
@@ -11,7 +8,7 @@ namespace Giyu.Core.Commands
     public class UtilsSlashCommands : InteractionModuleBase<SocketInteractionContext>
     {
 
-        [SlashCommand("purge", "Apaga mensagens de um canal de voz. limite de 100 mensagens.")]
+        [SlashCommand("purge", "Apaga mensagens de um canal de texto. limite de 100 mensagens.")]
         [RequireUserPermission(GuildPermission.ManageMessages)]
         public async Task PurgeChatCommand(uint quantidade)
             => await Context.Channel.SendMessageAsync(await UtilsManager.PurgeChatAsync(Context.Channel as ITextChannel, quantidade));

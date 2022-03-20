@@ -1,17 +1,14 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.Interactions;
-using Discord.Net;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
 using Victoria;
 using Victoria.EventArgs;
-using Victoria.Responses.Search;
 
 namespace Giyu.Core.Managers
 {

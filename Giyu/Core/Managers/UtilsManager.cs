@@ -2,12 +2,7 @@
 using Discord.Commands;
 using Discord.Interactions;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
-using Victoria;
-using Giyu.Core.Managers;
 
 namespace Giyu.Core.Managers
 {
