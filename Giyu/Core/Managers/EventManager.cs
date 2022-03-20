@@ -6,6 +6,7 @@ using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
 using Victoria;
@@ -20,7 +21,7 @@ namespace Giyu.Core.Managers
         private readonly static DiscordSocketClient _client = ServiceManager.GetService<DiscordSocketClient>();
         private readonly static CommandService _commandService = ServiceManager.GetService<CommandService>();
         private static InteractionService _interactionService = ServiceManager.Provider.GetRequiredService<InteractionService>();
-
+        public static IReadOnlyList<SlashCommandInfo> AllSlashCommands;
         public static Task LoadCommands()
         {
             _client.Log += message =>
@@ -116,6 +117,8 @@ namespace Giyu.Core.Managers
                 {
                     LogManager.Log("SLASH", $"{command.Name} carregado com sucesso.");
                 }
+
+                AllSlashCommands = _interactionService.SlashCommands;
 
                 _client.InteractionCreated += OnInteractionCreated;
 

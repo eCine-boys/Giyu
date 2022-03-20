@@ -29,7 +29,7 @@ namespace Giyu.Core.Managers
                 return $"Conectado em {voiceState.VoiceChannel.Name}";
             } catch (Exception ex)
             {
-                return $"ERROR\n{ex.Message}";
+                throw ex;
             }
         }
 
@@ -132,7 +132,7 @@ namespace Giyu.Core.Managers
                 }
                 catch (Exception ex)
                 {
-                    return EmbedManager.ReplySimple("Erro", $"{ex.Message}");
+                    throw ex;
                 }
             }
 
@@ -232,7 +232,7 @@ namespace Giyu.Core.Managers
             }
             catch (InvalidOperationException ex)
             {
-                return $"Error: {ex.Message}";
+                throw ex;
             }
         }
         
@@ -274,7 +274,7 @@ namespace Giyu.Core.Managers
             }
             catch (InvalidOperationException ex)
             {
-                return ex.Message;
+                throw ex;
             }
         }
 
@@ -291,9 +291,9 @@ namespace Giyu.Core.Managers
 
                 return $"**Tocando novamente:** {player.Track.Title}";
             }
-            catch (InvalidOperationException)
+            catch (InvalidOperationException ex)
             {
-                return "O Bot não está conectado a um canal de voz para isso.";
+                throw ex;
             }
         }
 
@@ -411,10 +411,6 @@ namespace Giyu.Core.Managers
                 foreach(var track in searchResponse.Tracks)
                 {
                     selectBuilder.AddOption(track.Title, track.Id, track.Author);
-                    //selectBuilder.AddOption(new SelectMenuOptionBuilder()
-                    //    .WithLabel(track.Title)
-                    //    .WithValue(track.Id)
-                    //    .WithDescription(track.Author + track.Id));
                 }
                     
                 var songList = new ComponentBuilder().WithSelectMenu(selectBuilder);
@@ -445,7 +441,6 @@ namespace Giyu.Core.Managers
                 }
             }
 
-            // songIndex > 2
 
             int song = songIndex - 2;
 

@@ -1,13 +1,21 @@
 ﻿using Discord;
+using Discord.Commands;
+using Discord.Interactions;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using Victoria;
+using Giyu.Core.Managers;
 
 namespace Giyu.Core.Managers
 {
     public class UtilsManager
     {
+        private static CommandService _commandService = ServiceManager.GetService<CommandService>();
+        private static InteractionService _interactionService = ServiceManager.Provider.GetRequiredService<InteractionService>();
+
         public static async Task<string> PurgeChatAsync(ITextChannel textChannel, uint amount)
         {
             if(amount < 1 || amount > 100)
@@ -37,6 +45,26 @@ namespace Giyu.Core.Managers
                 .WithColor(YTColor)
                 .WithDescription($"__**[Clique aqui para começar.](https://discord.com/invite/{Invite.Code})**__\n" +
                 " **Aviso:** Funciona apenas para Desktop.");
+
+            return embed.Build();
+        }
+
+        public static Embed HelpCommand ()
+        {
+            int commandPos = 0;
+
+            EmbedBuilder embed = new EmbedBuilder();
+
+            foreach (var command in EventManager.AllSlashCommands)
+            {
+                commandPos++;
+                embed.AddField(command.Name, command.Description); 
+            }
+
+            embed.WithAuthor(name: $"{commandPos} Comandos ativos.")
+                .WithCurrentTimestamp()
+                .WithColor(Color.Blue)
+                .WithFooter(text: "help");
 
             return embed.Build();
         }

@@ -20,5 +20,11 @@ namespace Giyu.Core.Commands
         [RequireUserPermission(GuildPermission.CreateInstantInvite)]
         public async Task YoutubeTogetherCommand()
             => await RespondAsync(embed: await UtilsManager.YoutubeTogetherAsync(Context.User as IVoiceState));
+        
+        [SlashCommand("help", "Ajuda sobre o bot.")]
+        public async Task HelpCommand()
+            => await RespondAsync(embed: UtilsManager.HelpCommand());
+
+
     }
 }
