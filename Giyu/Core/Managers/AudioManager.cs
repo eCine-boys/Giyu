@@ -448,15 +448,15 @@ namespace Giyu.Core.Managers
             }
         }
 
-        public static Embed RemoveAsync(dynamic context, int songIndex)
+        public static Embed RemoveAsync(IGuild guild, int songIndex)
         {
 
-            if (context.guild is null)
+            if (guild is null)
                 return EmbedManager.ReplyError("Guild não encontrada.");
 
-            if(_lavaNode.HasPlayer(context.guild))
+            if(_lavaNode.HasPlayer(guild))
             {
-                LavaPlayer player = _lavaNode.GetPlayer(context.guild);
+                LavaPlayer player = _lavaNode.GetPlayer(guild);
 
                 if (player == null)
                     return EmbedManager.ReplySimple("Queue", "Não foi possível obter o player.");
