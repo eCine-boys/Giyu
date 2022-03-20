@@ -133,17 +133,30 @@ namespace Giyu.Core.Managers
             await _client.SetGameAsync($"Prefix: {ConfigManager.Config.Prefix}", null, Discord.ActivityType.Listening);
         }
 
-        private static Task SelectMenuExecuted(SocketMessageComponent interaction)
+        private static async Task SelectMenuExecuted(SocketMessageComponent interaction)
         {
-            LogManager.Log("SELECT", $"[{interaction.Data.CustomId}] => [{interaction.Data.Value}]");
+            try
+            {
+                var text = string.Join(", ", interaction.Data.Values);
 
-            return Task.CompletedTask;
+                SocketUserMessage message = interaction.Message;
+
+                SocketInteractionContext context = new SocketInteractionContext(_client, interaction);
+
+                SocketGuildUser user = context.User as SocketGuildUser;
+
+                await _lavaNode.JoinAsync(user.VoiceChannel, context.Channel as ITextChannel);
+
+                LogManager.Log("SELECT", $"[{interaction.Data.CustomId}] => [{text}]");
+
+                Embed embed = await AudioManager.PlayAsync(context.Guild, $"https://youtube.com/watch?v={text}");
+
+                await interaction.RespondAsync(embed: embed);
+            } catch(Exception ex) 
+            {
+                LogManager.Log("Exception", ex.Message);
+            }
         }
-
-        /* private static async Task SlashCommandHandler(SocketSlashCommand command) // Controlar comandos futuramente;
-           {
-               await command.RespondAsync($"Executado {command.Data.Name}");
-           } */
 
         private static async Task OnTrackException(TrackExceptionEventArgs arg)
         {

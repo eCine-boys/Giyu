@@ -36,6 +36,91 @@ namespace Giyu.Core.Managers
             }
         }
 
+        public static async Task<Embed> PlayAsync(IGuild guild, string id)
+        {
+            try
+            {
+
+                LavaPlayer player = _lavaNode.GetPlayer(guild);
+
+                if (player is null)
+                    return EmbedManager.ReplyError("Player não conectado.");
+
+                LavaTrack track;
+
+                SearchResponse data = await _lavaNode.SearchYouTubeAsync(id);
+
+                if (data.Status == SearchStatus.NoMatches)
+                    return EmbedManager.ReplySimple("Aviso", $"Não foram encontrados resultados para: {id}");
+
+                track = data.Tracks.FirstOrDefault();
+
+                var thumb_image = await track.FetchArtworkAsync();
+
+                if (string.IsNullOrEmpty(thumb_image))
+                {
+                    thumb_image = $"https://i.ytimg.com/vi/{track.Id}/hqdefault.jpg";
+                }
+
+                if (player.Track != null && player.PlayerState is PlayerState.Playing || player.PlayerState is PlayerState.Paused)
+                {
+                    player.Queue.Enqueue(track);
+                    LogManager.Log("AUDIO", "Música adicionada a playlist.");
+                    EmbedBuilder embed_add = new EmbedBuilder();
+
+                    embed_add
+                        .WithAuthor(Author =>
+                        {
+                            Author.WithIconUrl("https://i0.wp.com/minecraftmodpacks.net/wp-content/uploads/2017/11/a47764f58bdb6731fd0a903697af9d98.png?resize=150%2C150");
+                            Author.WithName("Adicionada na playlist");
+                        })
+                        .WithDescription($"[{track.Title}]({track.Url})")
+                        .AddField("Autor", track.Author, true)
+                        .AddField("Duração", track.Duration, true)
+                        .WithThumbnailUrl(thumb_image)
+                        .WithCurrentTimestamp()
+                        .WithColor(EmbedManager.GetRandomColor())
+                        .WithFooter(x =>
+                        {
+                            x.IconUrl = guild.IconUrl;
+                            x.Text = guild.Name;
+                        });
+
+                    return embed_add.Build();
+                }
+
+                await player.PlayAsync(track);
+
+                LogManager.Log("AUDIO", $"Tocando agora: {track.Title}.");
+
+                EmbedBuilder embed = new EmbedBuilder();
+
+                embed
+                    .WithAuthor(Author =>
+                    {
+                        Author.WithIconUrl("https://i0.wp.com/minecraftmodpacks.net/wp-content/uploads/2017/11/a47764f58bdb6731fd0a903697af9d98.png?resize=150%2C150");
+                        Author.WithName("Tocando agora");
+                    })
+                    .WithDescription($"[{track.Title}]({track.Url})")
+                    .AddField("Autor", track.Author, true)
+                    .AddField("Duração", track.Duration, true)
+                    .WithThumbnailUrl(thumb_image)
+                    .WithCurrentTimestamp()
+                    .WithColor(EmbedManager.GetRandomColor())
+                    .WithFooter(x =>
+                    {
+                        x.IconUrl = guild.IconUrl;
+                        x.Text = guild.Name;
+                    });
+
+                return embed.Build();
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
         public static async Task<Embed> PlayAsync(SocketGuildUser user, SocketGuild guild, string query, dynamic context)
         {
             if (user.VoiceChannel is null)
@@ -322,18 +407,22 @@ namespace Giyu.Core.Managers
             }
         }
 
-        public static async Task<dynamic> SearchAsync(dynamic context, string query)
+        public static async Task<dynamic> SearchAsync(SocketInteractionContext context, string query)
         {
             try
             {
                 StringBuilder ListBuilder = new StringBuilder();
 
-               // if (player == null)
+                // if (player == null)
                 //    return EmbedManager.ReplySimple("Queue", "Não foi possível obter o player.");
 
-               // var builder = new ComponentBuilder().WithButton("Just the two of us", customId: "kZG-q1X7fbE", ButtonStyle.Primary, row: 0);
+                // var builder = new ComponentBuilder().WithButton("Just the two of us", customId: "kZG-q1X7fbE", ButtonStyle.Primary, row: 0);
 
-                var selectBuilder = new SelectMenuBuilder().WithCustomId("select-song").WithPlaceholder("Selecione uma música");
+                var selectBuilder = new SelectMenuBuilder()
+                    .WithCustomId("select-song")
+                    .WithPlaceholder("Selecione uma música")
+                    .WithMinValues(1)
+                    .WithMaxValues(1);
 
                 var searchResponse = await _lavaNode.SearchYouTubeAsync(query);
 
@@ -343,35 +432,15 @@ namespace Giyu.Core.Managers
                 foreach(var track in searchResponse.Tracks)
                 {
                     selectBuilder.AddOption(track.Title, track.Id, track.Author);
+                    //selectBuilder.AddOption(new SelectMenuOptionBuilder()
+                    //    .WithLabel(track.Title)
+                    //    .WithValue(track.Id)
+                    //    .WithDescription(track.Author + track.Id));
                 }
-
+                    
                 var songList = new ComponentBuilder().WithSelectMenu(selectBuilder);
 
                 return songList.Build();
-
-                //if (player.PlayerState is PlayerState.Playing || player.PlayerState is PlayerState.Paused)
-                //{
-                //    if (player.Queue.Count < 1 && player.Track != null)
-                //    {
-                //        return EmbedManager.ReplySimple("Tocando agora", $"{player.Track.Author} - {player.Track.Title}");
-                //    }
-                //    else
-                //    {
-                //        int trackPosNum = 2;
-                //        foreach (LavaTrack track in player.Queue)
-                //        {
-                //            ListBuilder.Append($"{trackPosNum}: [{track.Title}]({track.Url}) - {track.Id}\n");
-                //            trackPosNum++;
-                //        }
-
-                //        return EmbedManager.ReplySimple("Queue", $"Tocando agora: [{player.Track.Title}]({player.Track.Url}) \n{ListBuilder}");
-                //    }
-                //}
-                //else
-                //{
-                //    return EmbedManager.ReplySimple("Erro", "O Bot deve estar parado ou pausado para isso.");
-                //}
-
             }
             catch (Exception ex)
             {
