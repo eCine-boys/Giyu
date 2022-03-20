@@ -43,6 +43,7 @@ namespace Giyu.Core.Managers
             _lavaNode.OnTrackException += OnTrackException;
             _lavaNode.OnTrackStuck += OnTrackStuck;
             _lavaNode.OnWebSocketClosed += OnWebSocketClosed;
+            
             _lavaNode.OnTrackEnded += AudioManager.TrackEnded;
 
             return Task.CompletedTask;
@@ -57,8 +58,8 @@ namespace Giyu.Core.Managers
 
         private static async Task OnMessageReceived(SocketMessage arg) 
         {
-            var message = arg as SocketUserMessage;
-            var context = new SocketCommandContext(_client, message);
+            SocketUserMessage message = arg as SocketUserMessage;
+            SocketCommandContext context = new SocketCommandContext(_client, message);
 
             if(message.Author.IsBot || message.Channel is IDMChannel) return;
 
@@ -72,6 +73,7 @@ namespace Giyu.Core.Managers
             {
                 if (result.Error == CommandError.UnknownCommand) return;
             }
+
         }
 
         private static async Task SlashCommandExecuted(SlashCommandInfo slashInfo, Discord.IInteractionContext slashCtx, Discord.Interactions.IResult slashResult)
@@ -137,21 +139,30 @@ namespace Giyu.Core.Managers
         {
             try
             {
-                var text = string.Join(", ", interaction.Data.Values);
+                switch (interaction.Data.CustomId)
+                {
+                    case "select-song":
+                        var text = string.Join(", ", interaction.Data.Values);
 
-                SocketUserMessage message = interaction.Message;
+                        SocketUserMessage message = interaction.Message;
 
-                SocketInteractionContext context = new SocketInteractionContext(_client, interaction);
+                        SocketInteractionContext context = new SocketInteractionContext(_client, interaction);
 
-                SocketGuildUser user = context.User as SocketGuildUser;
+                        SocketGuildUser user = context.User as SocketGuildUser;
 
-                await _lavaNode.JoinAsync(user.VoiceChannel, context.Channel as ITextChannel);
+                        await _lavaNode.JoinAsync(user.VoiceChannel, context.Channel as ITextChannel);
 
-                LogManager.Log("SELECT", $"[{interaction.Data.CustomId}] => [{text}]");
+                        LogManager.Log("SELECT", $"[{interaction.Data.CustomId}] => [{text}]");
 
-                Embed embed = await AudioManager.PlayAsync(context.Guild, $"https://youtube.com/watch?v={text}");
+                        Embed embed = await AudioManager.PlayAsync(user, context.Guild, $"https://youtube.com/watch?v={text}", context);
 
-                await interaction.RespondAsync(embed: embed);
+                        await interaction.RespondAsync(embed: embed);
+                        break;
+                    default:
+                        LogManager.Log("SELECT", "ID Não encontrado: {interaction.Data.CustomId}");
+                        break;
+                }
+
             } catch(Exception ex) 
             {
                 LogManager.Log("Exception", ex.Message);

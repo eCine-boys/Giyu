@@ -130,19 +130,8 @@ namespace Giyu.Core.Managers
             {
                 try
                 {
-                    if(context is SocketCommandContext CommandCtx)
-                    {
-                        if (!!(CommandCtx.Channel is ITextChannel channel))
-                        {
-                            await _lavaNode.JoinAsync(user.VoiceChannel, channel);
-                        }
-                    } else if(context is SocketInteractionContext InteractionCtx)
-                    {
-                        if (!!(InteractionCtx.Channel is ITextChannel channel))
-                        {
-                            await _lavaNode.JoinAsync(user.VoiceChannel, channel);
-                        }
-                    }
+                    if(context.Channel is ITextChannel channel)
+                        await _lavaNode.JoinAsync(user.VoiceChannel, channel);
                 }
                 catch (Exception ex)
                 {
@@ -315,6 +304,12 @@ namespace Giyu.Core.Managers
         {
             try
             {
+
+                if(volume > 150 || volume < 0)
+                {
+                    return EmbedManager.ReplyError("Digite um valor entre 0 e 150 para o volume.");
+                }
+
                 LavaPlayer player = _lavaNode.GetPlayer(guild);
 
                 if (player.PlayerState != PlayerState.None)
@@ -350,9 +345,9 @@ namespace Giyu.Core.Managers
                 {
                     try
                     {
-                        var currentTrack = player.Track;
-                        await player.SkipAsync();
-                        return $"{currentTrack.Title} foi pulada.";
+                        (LavaTrack skipped, LavaTrack track) = await player.SkipAsync();
+
+                        return $"{skipped.Title} foi pulada.";
                     }
                     catch (Exception ex)
                     {
@@ -413,11 +408,6 @@ namespace Giyu.Core.Managers
             {
                 StringBuilder ListBuilder = new StringBuilder();
 
-                // if (player == null)
-                //    return EmbedManager.ReplySimple("Queue", "Não foi possível obter o player.");
-
-                // var builder = new ComponentBuilder().WithButton("Just the two of us", customId: "kZG-q1X7fbE", ButtonStyle.Primary, row: 0);
-
                 var selectBuilder = new SelectMenuBuilder()
                     .WithCustomId("select-song")
                     .WithPlaceholder("Selecione uma música")
@@ -448,20 +438,43 @@ namespace Giyu.Core.Managers
             }
         }
 
-        public static Embed RemoveAsync(IGuild guild, int songIndex)
+        public static async Task<Embed> RemoveAsync(IGuild guild, int songIndex)
         {
+            if (songIndex < 2)
+            {
+                if (songIndex == 1) // Removendo música atual;
+                {
+                    return EmbedManager.ReplySimple("Queue", "Música atual foi removida.");
+                }
+                else if (songIndex == 0) // Removendo música atual;
+                {
+                    return EmbedManager.ReplySimple("Queue", "Valor inválido: 0");
+                }
+                else
+                {
+                    return EmbedManager.ReplyError("Digite um valor acima de 0 para remover da playlist.");
+                }
+            }
 
-            if (guild is null)
-                return EmbedManager.ReplyError("Guild não encontrada.");
+            // songIndex > 2
+
+            int song = songIndex - 2;
 
             if(_lavaNode.HasPlayer(guild))
             {
                 LavaPlayer player = _lavaNode.GetPlayer(guild);
 
+                
+                
                 if (player == null)
                     return EmbedManager.ReplySimple("Queue", "Não foi possível obter o player.");
 
-                LavaTrack track = player.Queue.RemoveAt(songIndex);
+                LavaTrack removedTrack = player.Queue.ToArray()[song];
+
+                if (removedTrack is null)
+                    return EmbedManager.ReplyError("Música não encontrada na posição específicada.");
+
+                LavaTrack track = player.Queue.RemoveAt(song);
 
                 if (track is null)
                     return EmbedManager.ReplySimple("Queue", "Música não encontrada pelo index especificado");
@@ -523,60 +536,51 @@ namespace Giyu.Core.Managers
 
             if (!args.Player.Queue.TryDequeue(out var queueable))
             {
-                try
-                {
-                    // await TryAutoPlayNext(args);
-
-                    return;
-                } catch(Exception ex)
-                {
-                    LogManager.Log("ERROR", ex.Message);
-                }
-                
-            }
-
-            if (queueable is LavaTrack track)
-            {
-                await args.Player.PlayAsync(queueable);
-
-                EmbedBuilder embed = new EmbedBuilder();
-
-                var guild =  args.Player.TextChannel.Guild;
-
-                var thumb_image = await track.FetchArtworkAsync();
-
-                if (string.IsNullOrEmpty(thumb_image))
-                {
-                    thumb_image = $"https://i.ytimg.com/vi/{track.Id}/hqdefault.jpg";
-                }
-
-                embed
-                    .WithAuthor(Author =>
-                    {
-                        Author.WithIconUrl("https://i0.wp.com/minecraftmodpacks.net/wp-content/uploads/2017/11/a47764f58bdb6731fd0a903697af9d98.png?resize=150%2C150");
-                        Author.WithName("Tocando agora");
-                    })
-                    .WithDescription($"[{track.Title}]({track.Url})")
-                    .AddField("Autor", track.Author, true)
-                    .AddField("Duração", track.Duration, true)
-                    .WithThumbnailUrl(thumb_image)
-                    .WithCurrentTimestamp()
-                    .WithColor(EmbedManager.GetRandomColor())
-                    .WithFooter(x =>
-                    {
-                        x.IconUrl = guild.IconUrl;
-                        x.Text = $"Tocando agora em {args.Player.VoiceChannel.Name} 🔊";
-                    });
-
-                await args.Player.TextChannel.SendMessageAsync(embed: embed.Build());
-
-                return;
-            } else
-            {
-                // await args.Player.TextChannel.SendMessageAsync("Próximo item na playlist não é uma música.");
+                //await args.Player.TextChannel.SendMessageAsync("Fim da playlist.");
                 return;
             }
 
+            if(!(queueable is LavaTrack track))
+            {
+                await args.Player.TextChannel.SendMessageAsync("Próximo item na playlist não é uma música.");
+                return;
+            }
+
+            LogManager.Log("TOCANDO AGORA", track.Title);
+
+            await args.Player.PlayAsync(track);
+
+            EmbedBuilder embed = new EmbedBuilder();
+
+            var guild = args.Player.TextChannel.Guild;
+
+            var thumb_image = await track.FetchArtworkAsync();
+
+            if (string.IsNullOrEmpty(thumb_image))
+            {
+                thumb_image = $"https://i.ytimg.com/vi/{track.Id}/hqdefault.jpg";
+            }
+
+            embed
+                .WithAuthor(Author =>
+                {
+                    Author.WithIconUrl("https://i0.wp.com/minecraftmodpacks.net/wp-content/uploads/2017/11/a47764f58bdb6731fd0a903697af9d98.png?resize=150%2C150");
+                    Author.WithName("Tocando agora");
+                })
+                .WithDescription($"[{track.Title}]({track.Url})")
+                .AddField("Autor", track.Author, true)
+                .AddField("Duração", track.Duration, true)
+                .WithThumbnailUrl(thumb_image)
+                .WithCurrentTimestamp()
+                .WithColor(EmbedManager.GetRandomColor())
+                .WithFooter(x =>
+                {
+                    x.IconUrl = guild.IconUrl;
+                    x.Text = $"Tocando agora em {args.Player.VoiceChannel.Name} 🔊";
+                });
+
+            await args.Player.TextChannel.SendMessageAsync(embed: embed.Build());
+            return;
         }
 
     }

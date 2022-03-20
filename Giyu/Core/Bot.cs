@@ -3,7 +3,6 @@ using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Giyu.Core.Managers;
-using Giyu.Core.Web;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net;
 using System.Threading.Tasks;
@@ -51,7 +50,6 @@ namespace Giyu.Core
 
             ServiceManager.SetProvider(collection);
 
-            SocketServer.Init(80, IPAddress.Parse("127.0.0.1"));
         }
 
         public async Task MainAsync()
