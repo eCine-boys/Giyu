@@ -1,5 +1,5 @@
 # Giyu
-Discord Bot w/ LavaLink server.
+Discord Bot using Discord.Net v3 with LavaLink server, based on .NET Core.
 
 ## Built With
 
