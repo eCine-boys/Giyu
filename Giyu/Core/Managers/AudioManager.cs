@@ -16,6 +16,8 @@ namespace Giyu.Core.Managers
     public static class AudioManager
     {
         private static readonly LavaNode _lavaNode = ServiceManager.Provider.GetRequiredService<LavaNode>();
+        private static bool UserConnectedVoiceChannel(IUser user)
+            => !((user as IVoiceState).VoiceChannel is null);
         public static async Task<string> JoinAsync(IGuild guild, IVoiceState voiceState, ITextChannel textChannel)
         {
             if (_lavaNode.HasPlayer(guild)) return "Já estou conectado a um canal de voz.";
@@ -33,15 +35,101 @@ namespace Giyu.Core.Managers
             }
         }
 
+        public static Embed BumpTrack(IGuild guild, IUser user, int trackIndex)
+        {
+            if(!UserConnectedVoiceChannel(user))
+                return EmbedManager.ReplyError("Você precisa estar conectado a um canal de voz para isso.");
+
+            if (!_lavaNode.TryGetPlayer(guild, out LavaPlayer player))
+            {
+                return EmbedManager.ReplyError("Não foi possível obter o player. \n Use o comando **join** ou toque uma música **play**");
+            }
+
+            if (player.PlayerState != PlayerState.Playing)
+            {
+                return EmbedManager.ReplyError("Não se pode pular quando não há nada tocando.");
+            }
+
+            if(trackIndex < 2)
+            {
+                if(trackIndex == 1)
+                {
+                    return EmbedManager.ReplyError("A música já está no topo da playlist.");
+                } else if(trackIndex <= 0)
+                {
+                    return EmbedManager.ReplyError("Digite um valor válido para o bump, acima de 2.");
+                }
+            }
+
+
+            int song = trackIndex - 2;
+
+            try
+            {
+                LavaTrack track = player.Queue.ElementAt(song);
+
+                if (track is null)
+                    return EmbedManager.ReplyError($"Nenhuma música encontrada na posição específicada: {trackIndex}");
+
+
+                return EmbedManager.ReplyError("Não finalizado.");
+
+                //player.Queue.RemoveAt(song);
+
+                //var queue = player.Queue.Prepend(track);
+
+                //player.Queue.Clear();
+
+                //player.Queue.Enqueue(queue);
+
+                //return EmbedManager.ReplySimple("Bump", $"{track.Title} foi movida para o topo da playlist.");
+            }
+            catch (Exception ex)
+            {
+                return EmbedManager.ReplyError(ex.Message);
+            }
+
+
+        }
+
+        public static Embed SkipToPosition(IGuild guild, IUser user, int skipCount)
+        {
+
+            if (!UserConnectedVoiceChannel(user))
+                return EmbedManager.ReplyError("Você precisa estar conectado a um canal de voz para isso.");
+
+            if (!_lavaNode.TryGetPlayer(guild, out LavaPlayer player))
+            {
+                return EmbedManager.ReplyError("Não foi possível obter o player. \n Use o comando **join** ou toque uma música **play**");
+            }
+
+            if (player.PlayerState != PlayerState.Playing)
+            {
+                return EmbedManager.ReplyError("Não se pode pular quando não há nada tocando.");
+            }
+
+            try
+            {
+                player.Queue.Skip(skipCount);
+
+                return EmbedManager.ReplySimple("Skip", $"{skipCount} músicas puladas.");
+            }
+            catch (ArgumentNullException ex)
+            {
+                LogManager.Log("ArgNullEx - SkipToPositionAsync", ex.Message);
+                return EmbedManager.ReplySimple("Skipto", "Range específicado não existe.");
+            }
+        }
+
         public static async Task<Embed> PlayAsync(IGuild guild, string id)
         {
             try
             {
 
-                LavaPlayer player = _lavaNode.GetPlayer(guild);
-
-                if (player is null)
-                    return EmbedManager.ReplyError("Player não conectado.");
+                if (!_lavaNode.TryGetPlayer(guild, out LavaPlayer player))
+                {
+                    return EmbedManager.ReplyError("Não foi possível obter o player. \n Use o comando **join** ou toque uma música **play**");
+                }
 
                 LavaTrack track;
 
@@ -120,14 +208,14 @@ namespace Giyu.Core.Managers
 
         public static async Task<Embed> PlayAsync(SocketGuildUser user, SocketGuild guild, string query, dynamic context)
         {
-            if (user.VoiceChannel is null)
+            if(!UserConnectedVoiceChannel(user))
                 return EmbedManager.ReplySimple("Aviso", "Você precisa estar em um canal de voz para isso.");
 
-            if (!_lavaNode.HasPlayer(guild))
+            if (!_lavaNode.TryGetPlayer(guild, out LavaPlayer pl))
             {
                 try
                 {
-                    if(context.Channel is ITextChannel channel)
+                    if (context.Channel is ITextChannel channel)
                         await _lavaNode.JoinAsync(user.VoiceChannel, channel);
                 }
                 catch (Exception ex)
@@ -138,7 +226,7 @@ namespace Giyu.Core.Managers
 
             try
             {
-                LavaPlayer player = _lavaNode.GetPlayer(guild);
+                LavaPlayer player = pl ?? _lavaNode.GetPlayer(guild);
 
                 LavaTrack track;
 
@@ -350,7 +438,7 @@ namespace Giyu.Core.Managers
             }
         }
 
-        public static Embed ListAsync(IGuild guild)
+        public static Embed ListQueue(IGuild guild)
         {
             try
             {

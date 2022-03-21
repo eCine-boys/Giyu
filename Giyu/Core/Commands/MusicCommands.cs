@@ -53,12 +53,17 @@ namespace Giyu.Core.Commands
         [Command("queue")]
         [Summary("Lista as músicas da playlist atual caso haja uma.")]
         public async Task ListCommand()
-            => await Context.Channel.SendMessageAsync(embed: AudioManager.ListAsync(Context.Guild));
+            => await Context.Channel.SendMessageAsync(embed: AudioManager.ListQueue(Context.Guild));
         
         [Alias("vol")]
         [Command("volume")]
         public async Task VolumeCommand([Remainder] ushort volume)
             => await Context.Channel.SendMessageAsync(embed: await AudioManager.SetVolumeAsync(Context.Guild, volume));
 
+        [Alias("bmp")]
+        [Command("bump")]
+        [Summary("Move uma música da playlist para o topo da posição.")]
+        public async Task BumpCommand([Remainder] int position)
+            => await Context.Channel.SendMessageAsync(embed: AudioManager.BumpTrack(Context.Guild, Context.User, position));
     }
 }

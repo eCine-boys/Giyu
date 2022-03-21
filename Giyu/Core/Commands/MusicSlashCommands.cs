@@ -36,7 +36,7 @@ namespace Giyu.Core.Commands
 
         [SlashCommand("queue", "Lista as músicas da playlist atual caso haja uma.")]
         public async Task ListCommand()
-            => await RespondAsync(embed: AudioManager.ListAsync(Context.Guild));
+            => await RespondAsync(embed: AudioManager.ListQueue(Context.Guild));
 
         [SlashCommand("search", "Pesquisa uma música por uma palavra-chave.")]
         public async Task SearchCommand([Remainder] string search) {
@@ -57,12 +57,18 @@ namespace Giyu.Core.Commands
         public async Task RemoveCommand([Remainder] int position)
             => await RespondAsync(embed: AudioManager.Remove(Context.Guild, position));
 
-
         [Alias("vol")]
         [SlashCommand("volume", "Altera o volume da música em reprodução.")]
         public async Task VolumeCommand([Remainder] ushort volume)
             => await RespondAsync(embed: await AudioManager.SetVolumeAsync(Context.Guild, volume));
 
+        [SlashCommand("skipto", "Pula as músicas até uma posição específicada na playlist.")]
+        public async Task SkipToCommand([Remainder] int skipCount)
+            => await RespondAsync(embed: AudioManager.SkipToPosition(Context.Guild, Context.User, skipCount));
+
+        [SlashCommand("bump", "Move uma música da playlist para o topo da posição.")]
+        public async Task BumpCommand([Remainder] int position)
+            => await RespondAsync(embed: AudioManager.BumpTrack(Context.Guild, Context.User, position));
 
     }
 

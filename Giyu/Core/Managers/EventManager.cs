@@ -126,7 +126,7 @@ namespace Giyu.Core.Managers
                 await _lavaNode.ConnectAsync();
             } catch (Exception ex)
             {
-                throw ex;
+                LogManager.LogError(ex.Message);
             }
 
             LogManager.Log("READY", "Bot está online.");
