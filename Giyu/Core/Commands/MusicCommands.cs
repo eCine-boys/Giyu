@@ -65,5 +65,11 @@ namespace Giyu.Core.Commands
         [Summary("Move uma música da playlist para o topo da posição.")]
         public async Task BumpCommand([Remainder] int position)
             => await Context.Channel.SendMessageAsync(embed: AudioManager.BumpTrack(Context.Guild, Context.User, position));
+
+        [Alias("sh")]
+        [Command("shuffle")]
+        [Summary("Embaralha as músicas da playlist atual.")]
+        public async Task ShuffleCommand()
+            => await Context.Message.AddReactionAsync(Emote.Parse("👍"));
     }
 }

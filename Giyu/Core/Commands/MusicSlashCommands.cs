@@ -70,6 +70,9 @@ namespace Giyu.Core.Commands
         public async Task BumpCommand([Remainder] int position)
             => await RespondAsync(embed: AudioManager.BumpTrack(Context.Guild, Context.User, position));
 
+        [SlashCommand("shuffle", "Embaralha as músicas da playlist atual.")]
+        public async Task ShuffleCommand()
+            => await RespondAsync(embed: AudioManager.ShuffleTracks(Context.Guild, Context.User));
     }
 
 }

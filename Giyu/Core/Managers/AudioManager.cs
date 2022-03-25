@@ -36,9 +36,9 @@ namespace Giyu.Core.Managers
             }
         }
 
-        public static Embed BumpTrack(IGuild guild, IUser user, int trackIndex)
+        public static Embed ShuffleTracks(IGuild guild, IUser user)
         {
-            if(!UserConnectedVoiceChannel(user))
+            if (!UserConnectedVoiceChannel(user))
                 return EmbedManager.ReplyError("Você precisa estar conectado a um canal de voz para isso.");
 
             if (!_lavaNode.TryGetPlayer(guild, out LavaPlayer player))
@@ -46,25 +46,48 @@ namespace Giyu.Core.Managers
                 return EmbedManager.ReplyError("Não foi possível obter o player. \n Use o comando **join** ou toque uma música **play**");
             }
 
-            if (player.PlayerState != PlayerState.Playing)
+            if(player.Queue.Count > 0)
             {
-                return EmbedManager.ReplyError("Não se pode pular quando não há nada tocando.");
+                player.Queue.Shuffle();
+
+                return EmbedManager.ReplySimple("Shuffle", "Playlist embaralhada.");
+            } else
+            {
+                return EmbedManager.ReplySimple("Shuffle", "Não tem músicas na playlist para embaralhar.");
+            }
+        }
+
+        public static Embed BumpTrack(IGuild guild, IUser user, int trackIndex)
+        {
+            if (!UserConnectedVoiceChannel(user))
+                return EmbedManager.ReplyError("Você precisa estar conectado a um canal de voz para isso.");
+
+            if (!_lavaNode.TryGetPlayer(guild, out LavaPlayer player))
+            {
+                return EmbedManager.ReplyError("Não foi possível obter o player. \n Use o comando **join** ou toque uma música **play**");
             }
 
-            if(trackIndex < 2)
+            if (trackIndex <= 2)
             {
-                if(trackIndex == 1)
+                if(trackIndex == 2)
                 {
-                    return EmbedManager.ReplyError("A música já está no topo da playlist.");
-                } else if(trackIndex <= 0)
+                    return EmbedManager.ReplySimple("Bump", "A música já está no topo da playlist.")
+                }
+                else if (trackIndex == 1)
                 {
-                    return EmbedManager.ReplyError("Digite um valor válido para o bump, acima de 2.");
+                    if(player.PlayerState is PlayerState.Playing)
+                        return EmbedManager.ReplySimple("Bump", $"A música já {((player.PlayerState is PlayerState.Playing) ? "tocando" : "no topo")}.");
+                }
+                else if (trackIndex <= 0)
+                {
+                    return EmbedManager.ReplySimple("Bump", "Digite um valor válido para o bump, acima de 2.");
                 }
             }
 
-            if (trackIndex == 2)
-                return EmbedManager.ReplyError("Esta música já é a próxima da playlist.");
-
+            if(player.Queue.Count < 2)
+            {
+                return EmbedManager.ReplySimple("Bump", "Não há músicas para subir na playlist.");
+            }
 
             int song = trackIndex - 2;
 
@@ -75,10 +98,10 @@ namespace Giyu.Core.Managers
                 LavaTrack firstSongInQueue = player.Queue.First();
 
                 if (track is null)
-                    return EmbedManager.ReplyError($"Nenhuma música encontrada na posição específicada: {trackIndex}");
+                    return EmbedManager.ReplySimple("Bump", $"Nenhuma música encontrada na posição específicada: {trackIndex}");
 
                 if (firstSongInQueue is null)
-                    return EmbedManager.ReplyError($"Nenhuma música tocando.");
+                    return EmbedManager.ReplySimple("Bump", $"Nenhuma música tocando.");
 
                 player.Queue.Clear();
 
@@ -92,8 +115,6 @@ namespace Giyu.Core.Managers
             {
                 return EmbedManager.ReplyError(ex.Message);
             }
-
-
         }
 
         public static Embed SkipToPosition(IGuild guild, IUser user, int skipCount)
@@ -122,91 +143,6 @@ namespace Giyu.Core.Managers
             {
                 LogManager.Log("ArgNullEx - SkipToPositionAsync", ex.Message);
                 return EmbedManager.ReplySimple("Skipto", "Range específicado não existe.");
-            }
-        }
-
-        public static async Task<Embed> PlayAsync(IGuild guild, string id)
-        {
-            try
-            {
-
-                if (!_lavaNode.TryGetPlayer(guild, out LavaPlayer player))
-                {
-                    return EmbedManager.ReplyError("Não foi possível obter o player. \n Use o comando **join** ou toque uma música **play**");
-                }
-
-                LavaTrack track;
-
-                SearchResponse data = await _lavaNode.SearchYouTubeAsync(id);
-
-                if (data.Status == SearchStatus.NoMatches)
-                    return EmbedManager.ReplySimple("Aviso", $"Não foram encontrados resultados para: {id}");
-
-                track = data.Tracks.FirstOrDefault();
-
-                var thumb_image = await track.FetchArtworkAsync();
-
-                if (string.IsNullOrEmpty(thumb_image))
-                {
-                    thumb_image = $"https://i.ytimg.com/vi/{track.Id}/hqdefault.jpg";
-                }
-
-                if (player.Track != null && player.PlayerState is PlayerState.Playing || player.PlayerState is PlayerState.Paused)
-                {
-                    player.Queue.Enqueue(track);
-                    LogManager.Log("AUDIO", "Música adicionada a playlist.");
-                    EmbedBuilder embed_add = new EmbedBuilder();
-
-                    embed_add
-                        .WithAuthor(Author =>
-                        {
-                            Author.WithIconUrl("https://i0.wp.com/minecraftmodpacks.net/wp-content/uploads/2017/11/a47764f58bdb6731fd0a903697af9d98.png?resize=150%2C150");
-                            Author.WithName("Adicionada na playlist");
-                        })
-                        .WithDescription($"[{track.Title}]({track.Url})")
-                        .AddField("Autor", track.Author, true)
-                        .AddField("Duração", track.Duration, true)
-                        .WithThumbnailUrl(thumb_image)
-                        .WithCurrentTimestamp()
-                        .WithColor(EmbedManager.GetRandomColor())
-                        .WithFooter(x =>
-                        {
-                            x.IconUrl = guild.IconUrl;
-                            x.Text = guild.Name;
-                        });
-
-                    return embed_add.Build();
-                }
-
-                await player.PlayAsync(track);
-
-                LogManager.Log("AUDIO", $"Tocando agora: {track.Title}.");
-
-                EmbedBuilder embed = new EmbedBuilder();
-
-                embed
-                    .WithAuthor(Author =>
-                    {
-                        Author.WithIconUrl("https://i0.wp.com/minecraftmodpacks.net/wp-content/uploads/2017/11/a47764f58bdb6731fd0a903697af9d98.png?resize=150%2C150");
-                        Author.WithName("Tocando agora");
-                    })
-                    .WithDescription($"[{track.Title}]({track.Url})")
-                    .AddField("Autor", track.Author, true)
-                    .AddField("Duração", track.Duration, true)
-                    .WithThumbnailUrl(thumb_image)
-                    .WithCurrentTimestamp()
-                    .WithColor(EmbedManager.GetRandomColor())
-                    .WithFooter(x =>
-                    {
-                        x.IconUrl = guild.IconUrl;
-                        x.Text = guild.Name;
-                    });
-
-                return embed.Build();
-            }
-            catch (Exception ex)
-            {
-                throw ex;
             }
         }
 
