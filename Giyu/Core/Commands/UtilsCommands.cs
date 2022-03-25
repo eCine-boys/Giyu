@@ -21,6 +21,18 @@ namespace Giyu.Core.Commands
         public async Task YoutubeTogether()
             => await Context.Channel.SendMessageAsync(embed: await UtilsManager.YoutubeTogetherAsync(Context.User as IVoiceState));
 
+        [Command("ping")]
+        public async Task PingAsync()
+        {
+            EmbedBuilder builder = new EmbedBuilder();
+
+            builder.WithTitle($"Pong! :ping_pong: - {Context.Client.Latency}ms")
+                .WithDescription("Ping me again daddy!!")
+                .WithColor(Color.Magenta);
+
+            await ReplyAsync(embed: builder.Build());
+        }
+
         [Command("help")]
         [Summary("Ajuda sobre o bot.")]
         public async Task HelpCommand()

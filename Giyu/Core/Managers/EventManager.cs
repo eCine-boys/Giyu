@@ -111,9 +111,7 @@ namespace Giyu.Core.Managers
                 await _interactionService.RegisterCommandsGloballyAsync();
 
                 foreach(var command in _interactionService.SlashCommands)
-                {
                     LogManager.Log("SLASH", $"{command.Name} carregado com sucesso.");
-                }
 
                 AllSlashCommands = _interactionService.SlashCommands;
 

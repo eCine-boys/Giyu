@@ -3,6 +3,7 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -61,28 +62,31 @@ namespace Giyu.Core.Managers
                 }
             }
 
+            if (trackIndex == 2)
+                return EmbedManager.ReplyError("Esta música já é a próxima da playlist.");
+
 
             int song = trackIndex - 2;
 
             try
             {
+                var queue = player.Queue;
                 LavaTrack track = player.Queue.ElementAt(song);
+                LavaTrack firstSongInQueue = player.Queue.First();
 
                 if (track is null)
                     return EmbedManager.ReplyError($"Nenhuma música encontrada na posição específicada: {trackIndex}");
 
+                if (firstSongInQueue is null)
+                    return EmbedManager.ReplyError($"Nenhuma música tocando.");
 
-                return EmbedManager.ReplyError("Não finalizado.");
+                player.Queue.Clear();
 
-                //player.Queue.RemoveAt(song);
+                player.Queue.Enqueue(firstSongInQueue);
+                player.Queue.Enqueue(track);
+                player.Queue.Enqueue(queue.RemoveRange(0, 1));
 
-                //var queue = player.Queue.Prepend(track);
-
-                //player.Queue.Clear();
-
-                //player.Queue.Enqueue(queue);
-
-                //return EmbedManager.ReplySimple("Bump", $"{track.Title} foi movida para o topo da playlist.");
+                return EmbedManager.ReplySimple("Bump", $"{track.Title} foi movida para o topo da playlist.");
             }
             catch (Exception ex)
             {
