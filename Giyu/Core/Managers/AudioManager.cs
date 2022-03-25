@@ -71,7 +71,7 @@ namespace Giyu.Core.Managers
             {
                 if(trackIndex == 2)
                 {
-                    return EmbedManager.ReplySimple("Bump", "A música já está no topo da playlist.")
+                    return EmbedManager.ReplySimple("Bump", "A música já está no topo da playlist.");
                 }
                 else if (trackIndex == 1)
                 {
@@ -117,8 +117,10 @@ namespace Giyu.Core.Managers
             }
         }
 
-        public static Embed SkipToPosition(IGuild guild, IUser user, int skipCount)
+        public static async Task<Embed> SkipToPositionAsync(IGuild guild, IUser user, int skipCount)
         {
+
+            throw new NotImplementedException();
 
             if (!UserConnectedVoiceChannel(user))
                 return EmbedManager.ReplyError("Você precisa estar conectado a um canal de voz para isso.");
@@ -133,9 +135,23 @@ namespace Giyu.Core.Managers
                 return EmbedManager.ReplyError("Não se pode pular quando não há nada tocando.");
             }
 
+            if(skipCount < 0)
+            {
+                return EmbedManager.ReplyError("Valor inválido para skip.");
+            }
+            else if(skipCount == 1)
+            {
+                return EmbedManager.ReplyError("Não se pode pular para a música atual. digite um valor válido **acima de 2**\n/queue para ver a playlist atual.");
+            } 
+            else if(skipCount == 2)
+            {
+                return EmbedManager.ReplySimple("Skipto", await SkipTrackAsync(guild));
+            }
+
+
             try
             {
-                player.Queue.Skip(skipCount);
+
 
                 return EmbedManager.ReplySimple("Skip", $"{skipCount} músicas puladas.");
             }

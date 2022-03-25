@@ -64,7 +64,7 @@ namespace Giyu.Core.Commands
 
         [SlashCommand("skipto", "Pula as músicas até uma posição específicada na playlist.")]
         public async Task SkipToCommand([Remainder] int skipCount)
-            => await RespondAsync(embed: AudioManager.SkipToPosition(Context.Guild, Context.User, skipCount));
+            => await RespondAsync(embed: AudioManager.SkipToPositionAsync(Context.Guild, Context.User, skipCount));
 
         [SlashCommand("bump", "Move uma música da playlist para o topo da posição.")]
         public async Task BumpCommand([Remainder] int position)
