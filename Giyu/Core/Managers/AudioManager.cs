@@ -117,11 +117,19 @@ namespace Giyu.Core.Managers
             }
         }
 
+        private static void TrySkip(LavaPlayer player, int skipCount, out IEnumerable<LavaTrack> queue)
+        {
+            try
+            {
+                queue = player.Queue.Skip(skipCount);
+            } catch(ArgumentNullException)
+            {
+                queue = null;
+            }
+        }
+
         public static async Task<Embed> SkipToPositionAsync(IGuild guild, IUser user, int skipCount)
         {
-
-            throw new NotImplementedException();
-
             if (!UserConnectedVoiceChannel(user))
                 return EmbedManager.ReplyError("Você precisa estar conectado a um canal de voz para isso.");
 
@@ -151,7 +159,16 @@ namespace Giyu.Core.Managers
 
             try
             {
+                TrySkip(player, skipCount, out var queue);
 
+                if (queue is null)
+                    return EmbedManager.ReplyError("Não foi possível obter o range especificado para a playlist atual.\n/queue para ver a playlist atual.");
+
+                player.Queue.Clear();
+
+                player.Queue.Enqueue(queue);
+
+                player.PlayAsync(player.Queue.First());
 
                 return EmbedManager.ReplySimple("Skip", $"{skipCount} músicas puladas.");
             }
