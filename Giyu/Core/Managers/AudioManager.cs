@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using Giyu.Core.Modules;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -17,6 +18,7 @@ namespace Giyu.Core.Managers
     public static class AudioManager
     {
         private static readonly LavaNode _lavaNode = ServiceManager.Provider.GetRequiredService<LavaNode>();
+        private static readonly MusicModule musicRest = new MusicModule("http://localhost:3015");
         private static bool UserConnectedVoiceChannel(IUser user)
             => !((user as IVoiceState).VoiceChannel is null);
         public static async Task<string> JoinAsync(IGuild guild, IVoiceState voiceState, ITextChannel textChannel)
@@ -197,6 +199,8 @@ namespace Giyu.Core.Managers
                 }
             }
 
+
+
             try
             {
                 LavaPlayer player = pl ?? _lavaNode.GetPlayer(guild);
@@ -211,6 +215,7 @@ namespace Giyu.Core.Managers
                     return EmbedManager.ReplySimple("Aviso", $"Não foram encontrados resultados para: {query}");
 
                 track = search.Tracks.FirstOrDefault();
+
 
                 var thumb_image = await track.FetchArtworkAsync();
 
@@ -452,10 +457,14 @@ namespace Giyu.Core.Managers
             }
         }
 
-        public static async Task<dynamic> SearchAsync(SocketInteractionContext context, string query)
+        public static async Task<dynamic> SearchAsync(string query)
         {
             try
             {
+
+                if (string.IsNullOrEmpty(query))
+                    return EmbedManager.ReplySimple("Search", "Digite um valor válido para a pesquisa.");
+
                 StringBuilder ListBuilder = new StringBuilder();
 
                 var selectBuilder = new SelectMenuBuilder()
@@ -467,7 +476,7 @@ namespace Giyu.Core.Managers
                 var searchResponse = await _lavaNode.SearchYouTubeAsync(query);
 
                 if (searchResponse.Status is SearchStatus.NoMatches)
-                    return EmbedManager.ReplySimple("Erro", $"Sem resultados para {query}");
+                    return EmbedManager.ReplySimple("Search", $"Sem resultados para {query}");
 
                 foreach(var track in searchResponse.Tracks)
                 {
@@ -533,14 +542,21 @@ namespace Giyu.Core.Managers
 
         public static async Task TryAutoPlayNext(TrackEndedEventArgs args)
         {
-            string search = $"https://www.youtube.com/watch?v={args.Track.Id}&list=RD{args.Track.Id}";
+            IRelatedVideos relatedVideo = await musicRest.GetNextSongsBySongId(args.Player.TextChannel.GuildId, args.Track.Id);
+
+            if (relatedVideo is null)
+                return;
+
+            string search = $"https://www.youtube.com/watch?v={relatedVideo.Id}";
+
+            //string search = $"https://www.youtube.com/watch?v={args.Track.Id}&list=RD{args.Track.Id}";
 
             SearchResponse response = await _lavaNode.SearchAsync(SearchType.YouTubeMusic, search);
 
             if (response.Status == SearchStatus.NoMatches)
                 return;
 
-            LavaTrack _track = response.Tracks.ToArray()[1];
+            LavaTrack _track = response.Tracks.FirstOrDefault();
 
             await args.Player.PlayAsync(_track);
 
@@ -589,6 +605,8 @@ namespace Giyu.Core.Managers
             if (!player.Queue.TryDequeue(out var lavaTrack))
             {
                 //await args.Player.TextChannel.SendMessageAsync("Fim da playlist.");
+                await TryAutoPlayNext(args);
+
                 return;
             }
 
