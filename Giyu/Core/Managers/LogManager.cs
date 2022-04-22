@@ -55,18 +55,18 @@ namespace Giyu.Core.Managers
             Console.WriteLine($"[{DateTime.UtcNow}]\t({LogType})\t{args}");
         }
 
-        public static void LogError(string message)
+        public static void LogError(string type, string message)
         {
             Console.ForegroundColor = ConsoleColor.Red;
 
-            Console.WriteLine($"[{DateTime.UtcNow}]\t(ERROR)\t{message}", Console.ForegroundColor);
+            Console.WriteLine($"[{DateTime.UtcNow}]\t(ERROR::{type})\t{message}", Console.ForegroundColor);
         }
 
-        public static void LogDebug(string debug)
+        public static void LogDebug(string type, string debug)
         {
             Console.ForegroundColor = ConsoleColor.Magenta;
 
-            Console.WriteLine($"[{DateTime.UtcNow}]\t(DEBUG)\t{debug}", Console.ForegroundColor);
+            Console.WriteLine($"[{DateTime.UtcNow}]\t(DEBUG::{type})\t{debug}", Console.ForegroundColor);
 
         }
     }

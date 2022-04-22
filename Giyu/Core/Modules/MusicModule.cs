@@ -1,6 +1,8 @@
-﻿using Newtonsoft.Json;
+﻿using Giyu.Core.Managers;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -23,7 +25,7 @@ namespace Giyu.Core.Modules
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         }
-         
+
         private class IGetNextSongsBySongIdPayload
         {
             [JsonProperty("id")]
@@ -33,6 +35,7 @@ namespace Giyu.Core.Modules
         }
         public async Task<IRelatedVideos> GetNextSongsBySongId(ulong _guildId, string _id)
         {
+            
             try
             {
                 IGetNextSongsBySongIdPayload payload = new IGetNextSongsBySongIdPayload()
@@ -46,28 +49,27 @@ namespace Giyu.Core.Modules
                 StringContent httpContent = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
 
 
-                var res = await client.PostAsync($"/related", httpContent);
+                var res = await client.PostAsync("/related", httpContent);
 
                 if (res.IsSuccessStatusCode)
                 {
                     var res_json = await res.Content.ReadAsStringAsync();
-                    var jsonModel = Newtonsoft.Json.JsonConvert.DeserializeObject<IRelatedVideos>(res_json);
+                    var jsonModel = JsonConvert.DeserializeObject<IRelatedVideos>(res_json);
 
-                    Console.WriteLine(jsonModel.Id);
+                    LogManager.LogDebug("AUTOPLAY", $"{jsonModel.Author} - {jsonModel.Title}");
 
                     return jsonModel;
-                } else
+                }
+                else
                 {
                     throw new Exception(res.ReasonPhrase);
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                LogManager.LogError($"MUSICMODULE", ex.Message);
                 return null;
             }
         }
-
-        
     }
 }

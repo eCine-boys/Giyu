@@ -18,7 +18,7 @@ namespace Giyu.Core.Managers
     public static class AudioManager
     {
         private static readonly LavaNode _lavaNode = ServiceManager.Provider.GetRequiredService<LavaNode>();
-        private static readonly MusicModule musicRest = new MusicModule("http://localhost:3015");
+        private static readonly MusicModule musicRest = new MusicModule("http://137.184.232.97:3015");
         private static bool UserConnectedVoiceChannel(IUser user)
             => !((user as IVoiceState).VoiceChannel is null);
         public static async Task<string> JoinAsync(IGuild guild, IVoiceState voiceState, ITextChannel textChannel)
@@ -170,7 +170,7 @@ namespace Giyu.Core.Managers
 
                 player.Queue.Enqueue(queue);
 
-                player.PlayAsync(player.Queue.First());
+                _ = player.PlayAsync(player.Queue.First());
 
                 return EmbedManager.ReplySimple("Skip", $"{skipCount} músicas puladas.");
             }
@@ -198,7 +198,6 @@ namespace Giyu.Core.Managers
                     throw ex;
                 }
             }
-
 
 
             try
@@ -416,10 +415,12 @@ namespace Giyu.Core.Managers
             }
         }
 
-        public static Embed ListQueue(IGuild guild)
+        public static Embed ListQueue(IGuild guild, uint page)
         {
             try
             {
+                // uint peerPageCount = 10;
+
                 StringBuilder ListBuilder = new StringBuilder();
 
                 LavaPlayer player = _lavaNode.GetPlayer(guild);
@@ -438,22 +439,51 @@ namespace Giyu.Core.Managers
                         int trackPosNum = 2;
                         foreach(LavaTrack track in player.Queue)
                         {
-                            ListBuilder.Append($"{trackPosNum}: [{track.Title}]({track.Url})\n");
+                            ListBuilder.Append($"[{trackPosNum}]: [{track.Title}]({track.Url})\n");
                             trackPosNum++;
                         }
 
                         return EmbedManager.ReplySimple("Queue", $"Tocando agora: [{player.Track.Title}]({player.Track.Url}) \n{ListBuilder}");
                     }
+
                 }
                 else
                 {
-                    return EmbedManager.ReplySimple("Erro", "O Bot deve estar parado ou pausado para isso.");
+                    return EmbedManager.ReplySimple("Erro", "O Bot deve estar tocando ou pausado para isso.");
                 }
 
             }
             catch(Exception ex)
             {
                 return EmbedManager.ReplySimple("Error", $"{ex.Message}");
+            }
+        }
+
+        private static LavaTrack[] GetPageOfQueue(IGuild guild, int page)
+        {
+            LavaPlayer player = _lavaNode.GetPlayer(guild);
+
+            try
+            {
+                LavaTrack[] arrQueue = player.Queue.ToArray();
+
+                Index index = 0;
+
+                Index index2 = page;
+
+                LavaTrack[] sliced = arrQueue[index..index2];
+
+                if (sliced is null)
+                    return null;
+
+                foreach (var item in sliced)
+                    LogManager.LogDebug("SLICE", item.Title);
+
+                return sliced;
+            } catch(ArgumentNullException ex)
+            {
+                LogManager.LogError("GetPageOfQueue", ex.Message);
+                throw ex;
             }
         }
 

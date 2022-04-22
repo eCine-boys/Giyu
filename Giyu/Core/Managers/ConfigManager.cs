@@ -1,5 +1,7 @@
 ﻿using Newtonsoft.Json;
+using System.Collections.Generic;
 using System.IO;
+using Victoria;
 
 namespace Giyu.Core.Managers
 {
@@ -27,10 +29,8 @@ namespace Giyu.Core.Managers
                 var json = File.ReadAllText(ConfigPath);
                 Config = JsonConvert.DeserializeObject<BotConfig>(json);
             }
-
         }
     }
-
 
     public struct BotConfig
     {
@@ -40,5 +40,9 @@ namespace Giyu.Core.Managers
         public string Prefix { get; private set; }
         [JsonProperty("autoplay")]
         public bool Autoplay { get; set; }
+        [JsonProperty("authorization")]
+        public string LavaAuthorization { get; private set; }
+        [JsonProperty("hostname")]
+        public string LavaHostname { get; private set; }
     }
 }

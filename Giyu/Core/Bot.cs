@@ -3,6 +3,7 @@ using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Giyu.Core.Managers;
+using Giyu.Core.Modules;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Threading.Tasks;
@@ -45,11 +46,14 @@ namespace Giyu.Core
 
             collection.AddLavaNode(x =>
             {
-                x.SelfDeaf = false;
+                x.SelfDeaf = true;
+                x.Authorization = ConfigManager.Config.LavaAuthorization;
+                x.Hostname = ConfigManager.Config.LavaHostname;
+                x.IsSsl = false;
+                x.Port = 2333;
             });
 
             ServiceManager.SetProvider(collection);
-
         }
 
         public async Task MainAsync()
