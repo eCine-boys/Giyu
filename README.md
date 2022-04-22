@@ -17,7 +17,16 @@ ex@root ~$ dotnet restore
 ex@root ~$ dotnet build
 ```
 - After the first starts, go to Giyu\Giyu\bin\Debug\netcoreapp3.1\Resources;
-- Change token and prefix in config.json.
+- Change token, and prefix in config.json.
+```json
+{
+  "token": x, // bot token
+  "prefix": x, // bot prefix
+  "authorization": x, // lavalink passwd
+  "clientsecret": x, // bot client secret
+  "clientid": x // bot clientid
+}
+```
 
 ## Author
 * [**Kore**](https://github.com/korex71/)
