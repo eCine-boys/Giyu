@@ -20,11 +20,12 @@ ex@root ~$ dotnet build
 - Change token, and prefix in config.json.
 ```json
 {
-  "token": x, // bot token
-  "prefix": x, // bot prefix
-  "authorization": x, // lavalink passwd
-  "clientsecret": x, // bot client secret
-  "clientid": x // bot clientid
+  "token": bot token
+  "prefix": bot prefix
+  "authorization": lavalink passwd
+  "hostname": lavalink host
+  "clientsecret": bot client secret
+  "clientid": bot clientid
 }
 ```
 
