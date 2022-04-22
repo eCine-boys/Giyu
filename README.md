@@ -17,7 +17,7 @@ ex@root ~$ dotnet restore
 ex@root ~$ dotnet build
 ```
 - After the first starts, go to Giyu\Giyu\bin\Debug\netcoreapp3.1\Resources;
-- Change token, and prefix in config.json.
+- config.json example:
 ```json
 {
   "token": bot token
