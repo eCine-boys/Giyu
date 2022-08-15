@@ -59,15 +59,15 @@ namespace Giyu.Core.Managers
         {
             Console.ForegroundColor = ConsoleColor.Red;
 
-            Console.WriteLine($"[{DateTime.UtcNow}]\t(ERROR::{type})\t{message}", Console.ForegroundColor);
+
+            Console.WriteLine($"[{DateTime.UtcNow}]\t(ERRO)\t{message}");
         }
 
         public static void LogDebug(string type, string debug)
         {
             Console.ForegroundColor = ConsoleColor.Magenta;
 
-            Console.WriteLine($"[{DateTime.UtcNow}]\t(DEBUG::{type})\t{debug}", Console.ForegroundColor);
-
+            Console.WriteLine($"[{DateTime.UtcNow}]\t(DEBUG::{type})\t{debug}");
         }
     }
 }

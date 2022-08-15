@@ -46,20 +46,14 @@ namespace Giyu.Core.Managers
             
             _lavaNode.OnTrackEnded += AudioManager.TrackEnded;
 
-            WSocketManager socket = new WSocketManager("localhost:80");
+            //WSocketManager socket = new WSocketManager("localhost:80");
 
             return Task.CompletedTask;
         }
 
         private static Task OnLavaLog(LogMessage arg)
         {
-            try
-            {
-                LogManager.LogDebug(arg.Source, (string)arg.Message);
-            } catch (Exception ex)
-            {
-                LogManager.LogError(ex.Source, arg.Message);
-            }
+            LogManager.LogDebug("LAVALINK", arg.Message);
 
             return Task.CompletedTask;
         }
