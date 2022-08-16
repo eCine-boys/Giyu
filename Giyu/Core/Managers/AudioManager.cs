@@ -204,6 +204,11 @@ namespace Giyu.Core.Managers
             {
                 LavaPlayer player = pl ?? _lavaNode.GetPlayer(guild);
 
+                if(player.PlayerState == PlayerState.None)
+                {
+                    await _lavaNode.JoinAsync(user.VoiceChannel);
+                }
+
                 LavaTrack track;
 
                 SearchResponse search = Uri.IsWellFormedUriString(query, UriKind.Absolute) ?
@@ -288,12 +293,14 @@ namespace Giyu.Core.Managers
             {
                 LavaPlayer player = _lavaNode.GetPlayer(guild);
 
+                if (player.PlayerState is PlayerState.None) return $"Não conectado a nenhum canal de voz.";
+
                 if (player.PlayerState is PlayerState.Playing) await player.StopAsync();
 
                 await _lavaNode.LeaveAsync(player.VoiceChannel);
 
                 LogManager.Log("AUDIO", $"Bot saiu do canal de voz.");
-                return $"Saindo do canal de voz {player.VoiceChannel.Name}";
+                return $"Saindo do canal de voz {player.VoiceChannel?.Name}";
             }
             catch (InvalidOperationException ex)
             {
