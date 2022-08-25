@@ -70,6 +70,10 @@ namespace Giyu.Core.Commands
         [Command("shuffle")]
         [Summary("Embaralha as músicas da playlist atual.")]
         public async Task ShuffleCommand()
-            => await Context.Message.AddReactionAsync(Emote.Parse("👍"));
+        {
+            AudioManager.ShuffleTracks(Context.Guild, Context.User);
+
+            await Context.Message.AddReactionAsync(Emote.Parse("👍"));
+        }
     }
 }

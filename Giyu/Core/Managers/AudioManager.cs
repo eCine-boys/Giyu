@@ -18,7 +18,7 @@ namespace Giyu.Core.Managers
     public static class AudioManager
     {
         private static readonly LavaNode _lavaNode = ServiceManager.Provider.GetRequiredService<LavaNode>();
-        private static readonly MusicModule musicRest = new MusicModule("http://localhost:3015");
+        private static readonly MusicModule musicRest = new MusicModule(ConfigManager.Config.ProviderUrl);
         private static bool UserConnectedVoiceChannel(IUser user)
             => !((user as IVoiceState).VoiceChannel is null);
         public static async Task<string> JoinAsync(IGuild guild, IVoiceState voiceState, ITextChannel textChannel)
@@ -32,7 +32,8 @@ namespace Giyu.Core.Managers
                 await _lavaNode.JoinAsync(voiceState.VoiceChannel, textChannel);
 
                 return $"Conectado em {voiceState.VoiceChannel.Name}";
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 throw ex;
             }
@@ -48,12 +49,13 @@ namespace Giyu.Core.Managers
                 return EmbedManager.ReplyError("Não foi possível obter o player. \n Use o comando **join** ou toque uma música **play**");
             }
 
-            if(player.Queue.Count > 0)
+            if (player.Queue.Count > 0)
             {
                 player.Queue.Shuffle();
 
                 return EmbedManager.ReplySimple("Shuffle", "Playlist embaralhada.");
-            } else
+            }
+            else
             {
                 return EmbedManager.ReplySimple("Shuffle", "Não tem músicas na playlist para embaralhar.");
             }
@@ -71,13 +73,13 @@ namespace Giyu.Core.Managers
 
             if (trackIndex <= 2)
             {
-                if(trackIndex == 2)
+                if (trackIndex == 2)
                 {
                     return EmbedManager.ReplySimple("Bump", "A música já está no topo da playlist.");
                 }
                 else if (trackIndex == 1)
                 {
-                    if(player.PlayerState is PlayerState.Playing)
+                    if (player.PlayerState is PlayerState.Playing)
                         return EmbedManager.ReplySimple("Bump", $"A música já {((player.PlayerState is PlayerState.Playing) ? "tocando" : "no topo")}.");
                 }
                 else if (trackIndex <= 0)
@@ -86,7 +88,7 @@ namespace Giyu.Core.Managers
                 }
             }
 
-            if(player.Queue.Count < 2)
+            if (player.Queue.Count < 2)
             {
                 return EmbedManager.ReplySimple("Bump", "Não há músicas para subir na playlist.");
             }
@@ -124,7 +126,8 @@ namespace Giyu.Core.Managers
             try
             {
                 queue = player.Queue.Skip(skipCount);
-            } catch(ArgumentNullException)
+            }
+            catch (ArgumentNullException)
             {
                 queue = null;
             }
@@ -145,15 +148,15 @@ namespace Giyu.Core.Managers
                 return EmbedManager.ReplyError("Não se pode pular quando não há nada tocando.");
             }
 
-            if(skipCount < 0)
+            if (skipCount < 0)
             {
                 return EmbedManager.ReplyError("Valor inválido para skip.");
             }
-            else if(skipCount == 1)
+            else if (skipCount == 1)
             {
                 return EmbedManager.ReplyError("Não se pode pular para a música atual. digite um valor válido **acima de 2**\n/queue para ver a playlist atual.");
-            } 
-            else if(skipCount == 2)
+            }
+            else if (skipCount == 2)
             {
                 return EmbedManager.ReplySimple("Skipto", await SkipTrackAsync(guild));
             }
@@ -170,7 +173,7 @@ namespace Giyu.Core.Managers
 
                 player.Queue.Enqueue(queue);
 
-                player.PlayAsync(player.Queue.First());
+                await player.PlayAsync(player.Queue.First());
 
                 return EmbedManager.ReplySimple("Skip", $"{skipCount} músicas puladas.");
             }
@@ -183,7 +186,7 @@ namespace Giyu.Core.Managers
 
         public static async Task<Embed> PlayAsync(SocketGuildUser user, SocketGuild guild, string query, dynamic context)
         {
-            if(!UserConnectedVoiceChannel(user))
+            if (!UserConnectedVoiceChannel(user))
                 return EmbedManager.ReplySimple("Aviso", "Você precisa estar em um canal de voz para isso.");
 
             if (!_lavaNode.TryGetPlayer(guild, out LavaPlayer pl))
@@ -192,6 +195,7 @@ namespace Giyu.Core.Managers
                 {
                     if (context.Channel is ITextChannel channel)
                         await _lavaNode.JoinAsync(user.VoiceChannel, channel);
+
                 }
                 catch (Exception ex)
                 {
@@ -301,12 +305,22 @@ namespace Giyu.Core.Managers
                 throw ex;
             }
         }
-        
+
         public static async Task<string> PauseAsync(IGuild guild)
         {
             try
             {
                 LavaPlayer player = _lavaNode.GetPlayer(guild);
+
+                if (player.PlayerState == PlayerState.None)
+                {
+                    return "Player não conectado a um canal de voz.";
+                }
+
+                if (player.PlayerState is PlayerState.Playing)
+                {
+                    await player.PauseAsync();
+                }
 
                 if (!(player.PlayerState is PlayerState.Playing))
                 {
@@ -327,7 +341,7 @@ namespace Giyu.Core.Managers
         {
             try
             {
-                var player = _lavaNode.GetPlayer(guild);
+                LavaPlayer player = _lavaNode.GetPlayer(guild);
 
                 if (player is null)
                     return $"Não há música ativa no momento.";
@@ -350,6 +364,7 @@ namespace Giyu.Core.Managers
             {
                 LavaPlayer player = _lavaNode.GetPlayer(guild);
 
+
                 if (player.PlayerState is PlayerState.Paused)
                 {
                     await player.ResumeAsync();
@@ -368,7 +383,7 @@ namespace Giyu.Core.Managers
             try
             {
 
-                if(volume > 150 || volume < 0)
+                if (volume > 150 || volume < 0)
                 {
                     return EmbedManager.ReplyError("Digite um valor entre 0 e 150 para o volume.");
                 }
@@ -380,12 +395,14 @@ namespace Giyu.Core.Managers
                     await player.UpdateVolumeAsync(volume);
 
                     return EmbedManager.ReplySimple("Volume", $"Volume atualizado para {volume}%");
-                } else
+                }
+                else
                 {
                     return EmbedManager.ReplySimple("Volume", "O Bot precisa estar conectado a um canal de voz para isso.\n use **join**.");
                 }
 
-            } catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 return EmbedManager.ReplySimple("Volume", $"Erro ao atualizar volume: {ex.Message}");
             }
@@ -427,22 +444,41 @@ namespace Giyu.Core.Managers
                 if (player == null)
                     return EmbedManager.ReplySimple("Queue", "Não foi possível obter o player.");
 
-                if(player.PlayerState is PlayerState.Playing || player.PlayerState is PlayerState.Paused)
+                if (player.PlayerState is PlayerState.Playing || player.PlayerState is PlayerState.Paused)
                 {
-                    if(player.Queue.Count < 1 && player.Track != null)
+                    if (player.Queue.Count < 1 && player.Track != null)
                     {
                         return EmbedManager.ReplySimple("Tocando agora", $"{player.Track.Author} - {player.Track.Title}");
                     }
                     else
                     {
-                        int trackPosNum = 2;
-                        foreach(LavaTrack track in player.Queue)
+                        //int trackPosNum = 2;
+                        EmbedBuilder embed = new EmbedBuilder();
+
+                        embed
+                        .WithAuthor(Author =>
                         {
-                            ListBuilder.Append($"{trackPosNum}: [{track.Title}]({track.Url})\n");
-                            trackPosNum++;
+                            Author.WithIconUrl("https://i0.wp.com/minecraftmodpacks.net/wp-content/uploads/2017/11/a47764f58bdb6731fd0a903697af9d98.png?resize=150%2C150");
+                            Author.WithName("Queue");
+                        })
+                        .WithDescription($"Tocando agora [{player.Track.Title}]({player.Track.Url})")
+                        .WithCurrentTimestamp()
+                        .WithColor(EmbedManager.GetRandomColor());
+
+                        foreach (LavaTrack track in player.Queue)
+                        {
+                            embed.AddField($"[{track.Title}]({track.Url})", track.Author, true);
+
+                            //ListBuilder.Append($"{trackPosNum}: [{track.Title}]({track.Url})\n");
+                            //trackPosNum++;
                         }
 
-                        return EmbedManager.ReplySimple("Queue", $"Tocando agora: [{player.Track.Title}]({player.Track.Url}) \n{ListBuilder}");
+                        return embed.Build();
+
+
+
+
+                        //return EmbedManager.ReplySimple("Queue", $"Tocando agora: [{player.Track.Title}]({player.Track.Url}) \n{ListBuilder}");
                     }
                 }
                 else
@@ -451,7 +487,7 @@ namespace Giyu.Core.Managers
                 }
 
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return EmbedManager.ReplySimple("Error", $"{ex.Message}");
             }
@@ -478,11 +514,11 @@ namespace Giyu.Core.Managers
                 if (searchResponse.Status is SearchStatus.NoMatches)
                     return EmbedManager.ReplySimple("Search", $"Sem resultados para {query}");
 
-                foreach(var track in searchResponse.Tracks)
+                foreach (var track in searchResponse.Tracks)
                 {
                     selectBuilder.AddOption(track.Title, track.Id, track.Author);
                 }
-                    
+
                 var songList = new ComponentBuilder().WithSelectMenu(selectBuilder);
 
                 return songList.Build();
@@ -514,12 +550,10 @@ namespace Giyu.Core.Managers
 
             int song = songIndex - 2;
 
-            if(_lavaNode.HasPlayer(guild))
+            if (_lavaNode.HasPlayer(guild))
             {
                 LavaPlayer player = _lavaNode.GetPlayer(guild);
 
-                
-                
                 if (player == null)
                     return EmbedManager.ReplySimple("Queue", "Não foi possível obter o player.");
 
@@ -534,7 +568,8 @@ namespace Giyu.Core.Managers
                     return EmbedManager.ReplySimple("Queue", "Música não encontrada pelo index especificado");
 
                 return EmbedManager.ReplySimple("Queue", $"{track.Title} removida da playlist.");
-            } else
+            }
+            else
             {
                 return EmbedManager.ReplyError("Player não conectado");
             }
@@ -610,7 +645,7 @@ namespace Giyu.Core.Managers
                 return;
             }
 
-            if(lavaTrack is null)
+            if (lavaTrack is null)
             {
                 // Próximo item na playlist não é uma música;
                 return;

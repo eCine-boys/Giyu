@@ -14,8 +14,7 @@ namespace Giyu.Core
     {
         private readonly DiscordSocketClient _client;
         private readonly CommandService _commandService;
-        private InteractionService _interactionService;
-
+        private readonly InteractionService _interactionService;
         public Bot()
         {
             _client = new DiscordSocketClient(new DiscordSocketConfig()
@@ -43,9 +42,15 @@ namespace Giyu.Core
             collection.AddSingleton(_interactionService);
             collection.AddSingleton(_commandService);
 
+
+
             collection.AddLavaNode(x =>
             {
                 x.SelfDeaf = false;
+                x.Port = ConfigManager.Config.Port;
+                x.IsSsl = false;
+                x.Hostname = ConfigManager.Config.Hostname;
+                x.Authorization = ConfigManager.Config.Authorization;
             });
 
             ServiceManager.SetProvider(collection);

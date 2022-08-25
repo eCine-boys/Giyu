@@ -140,7 +140,8 @@ namespace Giyu.Core.Managers
                 switch (interaction.Data.CustomId)
                 {
                     case "select-song":
-                        var text = string.Join(", ", interaction.Data.Values);
+
+                        string songId = string.Join(", ", interaction.Data.Values);
 
                         SocketUserMessage message = interaction.Message;
 
@@ -150,18 +151,22 @@ namespace Giyu.Core.Managers
 
                         await _lavaNode.JoinAsync(user.VoiceChannel, context.Channel as ITextChannel);
 
-                        LogManager.Log("SELECT", $"[{interaction.Data.CustomId}] => [{text}]");
+                        LogManager.Log("SELECT", $"[{interaction.Data.CustomId}] => [{songId}]");
 
-                        Embed embed = await AudioManager.PlayAsync(user, context.Guild, $"https://youtube.com/watch?v={text}", context);
+                        Embed embed = await AudioManager.PlayAsync(user, context.Guild, $"https://youtube.com/watch?v={songId}", context);
 
                         await interaction.RespondAsync(embed: embed);
+
+                        await interaction.DeleteOriginalResponseAsync();
+
                         break;
                     default:
                         LogManager.Log("SELECT", "ID Não encontrado: {interaction.Data.CustomId}");
                         break;
                 }
 
-            } catch(Exception ex) 
+            } 
+            catch(Exception ex) 
             {
                 LogManager.Log("Exception", ex.Message);
             }
