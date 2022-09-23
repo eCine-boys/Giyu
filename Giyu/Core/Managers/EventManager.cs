@@ -15,6 +15,7 @@ namespace Giyu.Core.Managers
     public static class EventManager
     {
         private readonly static LavaNode _lavaNode = ServiceManager.Provider.GetRequiredService<LavaNode>();
+
         private readonly static DiscordSocketClient _client = ServiceManager.GetService<DiscordSocketClient>();
         private readonly static CommandService _commandService = ServiceManager.GetService<CommandService>();
         private static InteractionService _interactionService = ServiceManager.Provider.GetRequiredService<InteractionService>();
@@ -37,12 +38,22 @@ namespace Giyu.Core.Managers
 
             _client.MessageReceived += OnMessageReceived;
 
+            _lavaNode.OnLog += OnLavaLog;
 
             _lavaNode.OnTrackException += OnTrackException;
             _lavaNode.OnTrackStuck += OnTrackStuck;
             _lavaNode.OnWebSocketClosed += OnWebSocketClosed;
             
             _lavaNode.OnTrackEnded += AudioManager.TrackEnded;
+
+            //WSocketManager socket = new WSocketManager("localhost:80");
+
+            return Task.CompletedTask;
+        }
+
+        private static Task OnLavaLog(LogMessage arg)
+        {
+            LogManager.LogDebug("LAVALINK", arg.Message);
 
             return Task.CompletedTask;
         }
@@ -71,6 +82,8 @@ namespace Giyu.Core.Managers
             {
                 if (result.Error == CommandError.UnknownCommand) return;
             }
+
+
 
         }
 
@@ -124,7 +137,7 @@ namespace Giyu.Core.Managers
                 await _lavaNode.ConnectAsync();
             } catch (Exception ex)
             {
-                LogManager.LogError(ex.Message);
+                LogManager.LogError(ex.Source, ex.Message);
             }
 
             LogManager.Log("READY", "Bot está online.");
@@ -182,7 +195,7 @@ namespace Giyu.Core.Managers
 
         private static async Task OnTrackStuck(TrackStuckEventArgs arg)
         {
-            LogManager.Log("TrackStuck", $"{arg.Track.Title} ficou presa por {arg.Threshold}ms. => Console do Lavalink.");
+            LogManager.LogDebug("TrackStuck", $"{arg.Track.Title} ficou presa por {arg.Threshold}ms. => Console do Lavalink.");
 
             arg.Player.Queue.Enqueue(arg.Track);
             await arg.Player.TextChannel?.SendMessageAsync(

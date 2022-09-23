@@ -52,8 +52,8 @@ namespace Giyu.Core.Commands
         [Alias("q", "pl")]
         [Command("queue")]
         [Summary("Lista as músicas da playlist atual caso haja uma.")]
-        public async Task ListCommand()
-            => await Context.Channel.SendMessageAsync(embed: AudioManager.ListQueue(Context.Guild));
+        public async Task ListCommand(uint page)
+            => await Context.Channel.SendMessageAsync(embed: AudioManager.ListQueue(Context.Guild, page));
         
         [Alias("vol")]
         [Command("volume")]
