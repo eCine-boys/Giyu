@@ -38,7 +38,12 @@ namespace Giyu.Core.Managers
 
             _client.MessageReceived += OnMessageReceived;
 
-            _lavaNode.OnLog += OnLavaLog;
+            _lavaNode.OnLog += message =>
+            {
+                LogManager.LogDebug("LAVALINK", message.Message);
+
+                return Task.CompletedTask;
+            };
 
             _lavaNode.OnTrackException += OnTrackException;
             _lavaNode.OnTrackStuck += OnTrackStuck;
@@ -47,13 +52,6 @@ namespace Giyu.Core.Managers
             _lavaNode.OnTrackEnded += AudioManager.TrackEnded;
 
             //WSocketManager socket = new WSocketManager("localhost:80");
-
-            return Task.CompletedTask;
-        }
-
-        private static Task OnLavaLog(LogMessage arg)
-        {
-            LogManager.LogDebug("LAVALINK", arg.Message);
 
             return Task.CompletedTask;
         }
@@ -187,10 +185,10 @@ namespace Giyu.Core.Managers
 
         private static async Task OnTrackException(TrackExceptionEventArgs arg)
         {
-            LogManager.Log("TrackException", $"{arg.Track.Title} lançou um erro. => Console do Lavalink.");
+            LogManager.Log("TrackException", $"{arg.Track.Title}");
             arg.Player.Queue.Enqueue(arg.Track);
             await arg.Player.TextChannel?.SendMessageAsync(
-                $"{arg.Track.Title} has been re-added to queue after throwing an exception.");
+                $"{arg.Track.Title} foi adicionada novamente a playlist após um erro.");
         }
 
         private static async Task OnTrackStuck(TrackStuckEventArgs arg)

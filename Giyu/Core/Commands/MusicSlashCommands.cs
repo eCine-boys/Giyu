@@ -45,10 +45,8 @@ namespace Giyu.Core.Commands
             if(resp is MessageComponent _component)
             {
                 await RespondAsync(components: _component);
-                return;
             } else if(resp is Embed _embed)
             {
-
                 await RespondAsync(embed: _embed);
             }
         }
@@ -73,6 +71,10 @@ namespace Giyu.Core.Commands
         [SlashCommand("shuffle", "Embaralha as músicas da playlist atual.")]
         public async Task ShuffleCommand()
             => await RespondAsync(embed: AudioManager.ShuffleTracks(Context.Guild, Context.User));
+
+        [SlashCommand("lyrics", "Procura pela letra de uma música.")]
+        public async Task LyricsCommand([Remainder] string song)
+            => await RespondAsync(embed: await AudioManager.GetLyrics(song, Context.Guild, Context.User));
     }
 
 }

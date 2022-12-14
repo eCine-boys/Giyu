@@ -66,6 +66,28 @@ namespace Giyu.Core.Managers
             }
         }
 
+        public static async Task<Embed> GetLyrics(string song, IGuild guild, IUser user)
+        {
+            if (!UserConnectedVoiceChannel(user))
+                return EmbedManager.ReplyError("Você precisa estar conectado a um canal de voz para isso.");
+
+            if (!_lavaNode.TryGetPlayer(guild, out LavaPlayer player))
+            {
+                return EmbedManager.ReplyError("Não foi possível obter o player. \n Use o comando **join** ou toque uma música **play**");
+            }
+
+            string lyrics_genius = await player.Track.FetchLyricsFromGeniusAsync();
+
+            string lyrics_ovh = await player.Track.FetchLyricsFromOvhAsync();
+
+            if(string.IsNullOrEmpty(lyrics_genius) && string.IsNullOrEmpty(lyrics_ovh))
+            {
+                return EmbedManager.ReplyError("Letra de música não encontrada.");
+            }
+
+            return EmbedManager.ReplySimple("Lyrics", string.IsNullOrEmpty(lyrics_genius) ? lyrics_ovh : lyrics_genius);
+        }
+
         public static Embed BumpTrack(IGuild guild, IUser user, int trackIndex)
         {
             if (!UserConnectedVoiceChannel(user))
@@ -135,6 +157,32 @@ namespace Giyu.Core.Managers
             catch (ArgumentNullException)
             {
                 queue = null;
+            }
+        }
+
+        private static string GetQueuePage(LavaPlayer player, int page)
+        {
+            try
+            {
+                StringBuilder sb = new StringBuilder();
+
+                IEnumerable<LavaTrack> tracksPage = new LavaTrack[] { };
+
+                if (page == 1)
+                    tracksPage = player.Queue.Skip(0).Take(10);
+                else
+                    tracksPage = player.Queue.Skip(page * 10 - 10).Take(10);
+
+                foreach(LavaTrack track in tracksPage)
+                {
+                    sb.Append(track.Title);
+                }
+
+                return sb.ToString();
+            }
+            catch (ArgumentNullException)
+            {
+                return string.Empty;
             }
         }
 
