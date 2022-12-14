@@ -50,8 +50,6 @@ namespace Giyu.Core.Modules
 
                 HttpResponseMessage res = await client.PostAsync("/related", httpContent);
 
-                var res = await client.PostAsync("/related", httpContent);
-
                 if (res.IsSuccessStatusCode)
                 {
                     var res_json = await res.Content.ReadAsStringAsync();

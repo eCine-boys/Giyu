@@ -1,7 +1,5 @@
 ﻿using Newtonsoft.Json;
-using System.Collections.Generic;
 using System.IO;
-using Victoria;
 
 namespace Giyu.Core.Managers
 {
@@ -42,8 +40,13 @@ namespace Giyu.Core.Managers
 
         [JsonProperty("autoplay")]
         public bool Autoplay { get; set; }
+
+        [JsonProperty("bot_provider_url")]
+        public string BotProviderUri { get; set; }
+
         [JsonProperty("authorization")]
         public string LavaAuthorization { get; private set; }
+
         [JsonProperty("hostname")]
         public string LavaHostname { get; private set; }
     }

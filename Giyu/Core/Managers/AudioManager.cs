@@ -49,6 +49,11 @@ namespace Giyu.Core.Managers
                 return EmbedManager.ReplyError("Não foi possível obter o player. \n Use o comando **join** ou toque uma música **play**");
             }
 
+            if(player.Queue.Count == 0)
+            {
+                return EmbedManager.ReplySimple("Shuffle", "Não tem músicas na playlist para embaralhar.");
+            }
+
             if (player.Queue.Count > 0)
             {
                 player.Queue.Shuffle();
@@ -57,7 +62,7 @@ namespace Giyu.Core.Managers
             }
             else
             {
-                return EmbedManager.ReplySimple("Shuffle", "Não tem músicas na playlist para embaralhar.");
+                return EmbedManager.ReplySimple("Shuffle", "Não tem músicas na playlist para o shuffle.");
             }
         }
 
