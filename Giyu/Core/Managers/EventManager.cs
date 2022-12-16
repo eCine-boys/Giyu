@@ -148,6 +148,8 @@ namespace Giyu.Core.Managers
         {
             try
             {
+                SocketInteractionContext context = new SocketInteractionContext(_client, interaction);
+
                 switch (interaction.Data.CustomId)
                 {
                     case "select-song":
@@ -155,8 +157,6 @@ namespace Giyu.Core.Managers
                         string songId = string.Join(", ", interaction.Data.Values);
 
                         SocketUserMessage message = interaction.Message;
-
-                        SocketInteractionContext context = new SocketInteractionContext(_client, interaction);
 
                         SocketGuildUser user = context.User as SocketGuildUser;
 
@@ -169,6 +169,28 @@ namespace Giyu.Core.Managers
                         await interaction.RespondAsync(embed: embed);
 
                         await interaction.DeleteOriginalResponseAsync();
+                        break;
+                    case "next_page":
+                    case "last_page":
+                        IGuild guild = context.Guild;
+
+                        string page = string.Join(", ", interaction.Data.Values);
+
+                        LavaTrack[] tracks = AudioManager.GetPageOfQueue(guild, int.Parse(page));
+
+                        EmbedBuilder eBuilder = new EmbedBuilder();
+
+                        foreach(LavaTrack track in tracks)
+                        {
+                            eBuilder.AddField(track.Title, track.Author);
+                        }
+
+                        Embed replyQueueEmbed = eBuilder.Build();
+
+                        await interaction.UpdateAsync(msg =>
+                        {
+                            msg.Embed = replyQueueEmbed;
+                        });
 
                         break;
                     default:

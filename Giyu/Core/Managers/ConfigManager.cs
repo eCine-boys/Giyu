@@ -17,7 +17,12 @@ namespace Giyu.Core.Managers
 
             if(!File.Exists(ConfigPath))
             {
-                Config = new BotConfig();
+                Config = new BotConfig()
+                {
+                    LavaHostname = "localhost",
+                    LavaAuthorization = "youshallnotpass"
+                };
+
                 string json = JsonConvert.SerializeObject(Config, Formatting.Indented);
 
                 File.WriteAllText(ConfigPath, json);
@@ -44,10 +49,16 @@ namespace Giyu.Core.Managers
         [JsonProperty("bot_provider_url")]
         public string BotProviderUri { get; set; }
 
-        [JsonProperty("authorization")]
-        public string LavaAuthorization { get; private set; }
+        [JsonProperty("clientsecret")]
+        public string ClientSecret { get; set; }
 
-        [JsonProperty("hostname")]
-        public string LavaHostname { get; private set; }
+        [JsonProperty("lava_pass")]
+        public string LavaAuthorization { get; set; }
+
+        [JsonProperty("lava_host")]
+        public string LavaHostname { get; set; }
+        
+        [JsonProperty("lava_port")]
+        public short LavaPort { get; set; }
     }
 }

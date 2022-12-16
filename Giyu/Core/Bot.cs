@@ -7,6 +7,7 @@ using Giyu.Core.Modules;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Threading.Tasks;
 using Victoria;
 
@@ -76,11 +77,17 @@ namespace Giyu.Core
                     throw new ArgumentNullException("Bot Token está vazio ou não existe.");
                 };
 
+                string workingDirectory = Environment.CurrentDirectory;
+                string projectDirectory = Directory.GetParent(workingDirectory).Parent.Parent.FullName;
+
                 ProcessStartInfo p_info = new ProcessStartInfo();
                     p_info.UseShellExecute = true;
                     p_info.CreateNoWindow = false;
                     p_info.WindowStyle = ProcessWindowStyle.Normal;
-                    p_info.FileName = @"C:\Lavalink\start.bat";
+                    p_info.FileName = $"{projectDirectory}\\Lavalink\\start.bat";
+
+                if (Environment.OSVersion.Platform is PlatformID.Unix)
+                    p_info.FileName = $"{projectDirectory}\\Lavalink\\start.sh";
 
                 Process.Start(p_info);
 

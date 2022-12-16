@@ -35,8 +35,8 @@ namespace Giyu.Core.Commands
             => await RespondAsync(await AudioManager.StopAsync(Context.Guild));
 
         [SlashCommand("queue", "Lista as músicas da playlist atual caso haja uma.")]
-        public async Task ListCommand(uint page)
-            => await RespondAsync(embed: AudioManager.ListQueue(Context.Guild, page));
+        public async Task ListCommand()
+            => await RespondAsync(embed: AudioManager.ListQueue(Context.Guild));
 
         [SlashCommand("search", "Pesquisa uma música por uma palavra-chave.")]
         public async Task SearchCommand([Remainder] string search) {

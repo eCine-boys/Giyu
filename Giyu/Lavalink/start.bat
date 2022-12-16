@@ -1,0 +1,1 @@
+java -jar C:\\Lavalink\\Lavalink.jar --port 8000

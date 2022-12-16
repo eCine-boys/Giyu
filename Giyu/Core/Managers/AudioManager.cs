@@ -492,12 +492,10 @@ namespace Giyu.Core.Managers
             }
         }
 
-        public static Embed ListQueue(IGuild guild, uint page)
+        public static Embed ListQueue(IGuild guild)
         {
             try
             {
-                // uint peerPageCount = 10;
-
                 StringBuilder ListBuilder = new StringBuilder();
 
                 LavaPlayer player = _lavaNode.GetPlayer(guild);
@@ -536,8 +534,9 @@ namespace Giyu.Core.Managers
 
                         return embed.Build();
 
-
-
+                        ComponentBuilder pagesBuilder = new ComponentBuilder()
+                            .WithButton("<", $"last_page:{1}")
+                            .WithButton(">", $"next_page:{2}");
 
                         //return EmbedManager.ReplySimple("Queue", $"Tocando agora: [{player.Track.Title}]({player.Track.Url}) \n{ListBuilder}");
                     }
@@ -555,7 +554,7 @@ namespace Giyu.Core.Managers
             }
         }
 
-        private static LavaTrack[] GetPageOfQueue(IGuild guild, int page)
+        public static LavaTrack[] GetPageOfQueue(IGuild guild, int page)
         {
             LavaPlayer player = _lavaNode.GetPlayer(guild);
 
@@ -593,13 +592,13 @@ namespace Giyu.Core.Managers
 
                 StringBuilder ListBuilder = new StringBuilder();
 
-                var selectBuilder = new SelectMenuBuilder()
+                SelectMenuBuilder selectBuilder = new SelectMenuBuilder()
                     .WithCustomId("select-song")
                     .WithPlaceholder("Selecione uma música")
                     .WithMinValues(1)
                     .WithMaxValues(1);
 
-                var searchResponse = await _lavaNode.SearchYouTubeAsync(query);
+                SearchResponse searchResponse = await _lavaNode.SearchYouTubeAsync(query);
 
                 if (searchResponse.Status is SearchStatus.NoMatches)
                     return EmbedManager.ReplySimple("Search", $"Sem resultados para {query}");
