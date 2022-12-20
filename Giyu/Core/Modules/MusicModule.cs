@@ -46,10 +46,9 @@ namespace Giyu.Core.Modules
 
                 string json = JsonConvert.SerializeObject(payload);
 
-                StringContent httpContent = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+                StringContent httpContent = new StringContent(json, Encoding.UTF8, "application/json");
 
-
-                var res = await client.PostAsync("/related", httpContent);
+                HttpResponseMessage res = await client.PostAsync("/related", httpContent);
 
                 if (res.IsSuccessStatusCode)
                 {

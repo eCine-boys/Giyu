@@ -35,8 +35,8 @@ namespace Giyu.Core.Commands
             => await RespondAsync(await AudioManager.StopAsync(Context.Guild));
 
         [SlashCommand("queue", "Lista as músicas da playlist atual caso haja uma.")]
-        public async Task ListCommand(uint page)
-            => await RespondAsync(embed: AudioManager.ListQueue(Context.Guild, page));
+        public async Task ListCommand()
+            => await RespondAsync(embed: AudioManager.ListQueue(Context.Guild));
 
         [SlashCommand("search", "Pesquisa uma música por uma palavra-chave.")]
         public async Task SearchCommand([Remainder] string search) {
@@ -45,10 +45,8 @@ namespace Giyu.Core.Commands
             if(resp is MessageComponent _component)
             {
                 await RespondAsync(components: _component);
-                return;
             } else if(resp is Embed _embed)
             {
-
                 await RespondAsync(embed: _embed);
             }
         }
@@ -73,6 +71,10 @@ namespace Giyu.Core.Commands
         [SlashCommand("shuffle", "Embaralha as músicas da playlist atual.")]
         public async Task ShuffleCommand()
             => await RespondAsync(embed: AudioManager.ShuffleTracks(Context.Guild, Context.User));
+
+        [SlashCommand("lyrics", "Procura pela letra de uma música.")]
+        public async Task LyricsCommand([Remainder] string song)
+            => await RespondAsync(embed: await AudioManager.GetLyrics(song, Context.Guild, Context.User));
     }
 
 }

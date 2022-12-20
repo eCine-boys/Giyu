@@ -38,7 +38,12 @@ namespace Giyu.Core.Managers
 
             _client.MessageReceived += OnMessageReceived;
 
-            _lavaNode.OnLog += OnLavaLog;
+            _lavaNode.OnLog += message =>
+            {
+                LogManager.LogDebug("LAVALINK", message.Message);
+
+                return Task.CompletedTask;
+            };
 
             _lavaNode.OnTrackException += OnTrackException;
             _lavaNode.OnTrackStuck += OnTrackStuck;
@@ -46,20 +51,7 @@ namespace Giyu.Core.Managers
             
             _lavaNode.OnTrackEnded += AudioManager.TrackEnded;
 
-            WSocketManager socket = new WSocketManager("localhost:80");
-
-            return Task.CompletedTask;
-        }
-
-        private static Task OnLavaLog(LogMessage arg)
-        {
-            try
-            {
-                LogManager.LogDebug(arg.Source, (string)arg.Message);
-            } catch (Exception ex)
-            {
-                LogManager.LogError(ex.Source, arg.Message);
-            }
+            //WSocketManager socket = new WSocketManager("localhost:80");
 
             return Task.CompletedTask;
         }
@@ -156,31 +148,58 @@ namespace Giyu.Core.Managers
         {
             try
             {
+                SocketInteractionContext context = new SocketInteractionContext(_client, interaction);
+
                 switch (interaction.Data.CustomId)
                 {
                     case "select-song":
-                        var text = string.Join(", ", interaction.Data.Values);
+
+                        string songId = string.Join(", ", interaction.Data.Values);
 
                         SocketUserMessage message = interaction.Message;
-
-                        SocketInteractionContext context = new SocketInteractionContext(_client, interaction);
 
                         SocketGuildUser user = context.User as SocketGuildUser;
 
                         await _lavaNode.JoinAsync(user.VoiceChannel, context.Channel as ITextChannel);
 
-                        LogManager.Log("SELECT", $"[{interaction.Data.CustomId}] => [{text}]");
+                        LogManager.Log("SELECT", $"[{interaction.Data.CustomId}] => [{songId}]");
 
-                        Embed embed = await AudioManager.PlayAsync(user, context.Guild, $"https://youtube.com/watch?v={text}", context);
+                        Embed embed = await AudioManager.PlayAsync(user, context.Guild, $"https://youtube.com/watch?v={songId}", context);
 
                         await interaction.RespondAsync(embed: embed);
+
+                        await interaction.DeleteOriginalResponseAsync();
+                        break;
+                    case "next_page":
+                    case "last_page":
+                        IGuild guild = context.Guild;
+
+                        string page = string.Join(", ", interaction.Data.Values);
+
+                        LavaTrack[] tracks = AudioManager.GetPageOfQueue(guild, int.Parse(page));
+
+                        EmbedBuilder eBuilder = new EmbedBuilder();
+
+                        foreach(LavaTrack track in tracks)
+                        {
+                            eBuilder.AddField(track.Title, track.Author);
+                        }
+
+                        Embed replyQueueEmbed = eBuilder.Build();
+
+                        await interaction.UpdateAsync(msg =>
+                        {
+                            msg.Embed = replyQueueEmbed;
+                        });
+
                         break;
                     default:
                         LogManager.Log("SELECT", "ID Não encontrado: {interaction.Data.CustomId}");
                         break;
                 }
 
-            } catch(Exception ex) 
+            } 
+            catch(Exception ex) 
             {
                 LogManager.Log("Exception", ex.Message);
             }
@@ -188,10 +207,10 @@ namespace Giyu.Core.Managers
 
         private static async Task OnTrackException(TrackExceptionEventArgs arg)
         {
-            LogManager.Log("TrackException", $"{arg.Track.Title} lançou um erro. => Console do Lavalink.");
+            LogManager.Log("TrackException", $"{arg.Track.Title}");
             arg.Player.Queue.Enqueue(arg.Track);
             await arg.Player.TextChannel?.SendMessageAsync(
-                $"{arg.Track.Title} has been re-added to queue after throwing an exception.");
+                $"{arg.Track.Title} foi adicionada novamente a playlist após um erro.");
         }
 
         private static async Task OnTrackStuck(TrackStuckEventArgs arg)

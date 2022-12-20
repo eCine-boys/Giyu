@@ -52,8 +52,8 @@ namespace Giyu.Core.Commands
         [Alias("q", "pl")]
         [Command("queue")]
         [Summary("Lista as músicas da playlist atual caso haja uma.")]
-        public async Task ListCommand(uint page)
-            => await Context.Channel.SendMessageAsync(embed: AudioManager.ListQueue(Context.Guild, page));
+        public async Task ListCommand()
+            => await Context.Channel.SendMessageAsync(embed: AudioManager.ListQueue(Context.Guild));
         
         [Alias("vol")]
         [Command("volume")]
@@ -70,6 +70,10 @@ namespace Giyu.Core.Commands
         [Command("shuffle")]
         [Summary("Embaralha as músicas da playlist atual.")]
         public async Task ShuffleCommand()
-            => await Context.Message.AddReactionAsync(Emote.Parse("👍"));
+        {
+            AudioManager.ShuffleTracks(Context.Guild, Context.User);
+
+            await Context.Message.AddReactionAsync(Emote.Parse("👍"));
+        }
     }
 }
