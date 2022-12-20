@@ -2,6 +2,7 @@
 using Discord.Commands;
 using Discord.Interactions;
 using Microsoft.Extensions.DependencyInjection;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Giyu.Core.Managers
@@ -18,9 +19,9 @@ namespace Giyu.Core.Managers
                 return $"Utilize valores de 1-100";
             }
 
-            var messages = await textChannel.GetMessagesAsync((int)amount + 1).FlattenAsync();
+            IEnumerable<IMessage> messages = await textChannel.GetMessagesAsync((int)amount + 1).FlattenAsync();
 
-            foreach (var message in messages)
+            foreach (IMessage message in messages)
             {
                 await Task.Delay(500);
                 await textChannel.DeleteMessageAsync(message.Id);
@@ -46,17 +47,12 @@ namespace Giyu.Core.Managers
 
         public static Embed HelpCommand ()
         {
-            int commandPos = 0;
-
             EmbedBuilder embed = new EmbedBuilder();
 
             foreach (var command in EventManager.AllSlashCommands)
-            {
-                commandPos++;
                 embed.AddField(command.Name, command.Description); 
-            }
 
-            embed.WithAuthor(name: $"{commandPos} Comandos ativos.")
+            embed.WithAuthor(name: $"{EventManager.AllSlashCommands.Count} Comandos ativos.")
                 .WithCurrentTimestamp()
                 .WithColor(Color.Blue)
                 .WithFooter(text: "help");
