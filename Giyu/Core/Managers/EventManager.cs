@@ -8,7 +8,9 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
 using Victoria;
-using Victoria.EventArgs;
+using Victoria.Node;
+using Victoria.Node.EventArgs;
+using Victoria.Player;
 
 namespace Giyu.Core.Managers
 {
@@ -38,18 +40,20 @@ namespace Giyu.Core.Managers
 
             _client.MessageReceived += OnMessageReceived;
 
-            _lavaNode.OnLog += message =>
+            _lavaNode.OnUpdateReceived += message =>
             {
-                LogManager.LogDebug("LAVALINK", message.Message);
+
+                LogManager.LogDebug("LAVALINK", message.ToString());
 
                 return Task.CompletedTask;
             };
+
 
             _lavaNode.OnTrackException += OnTrackException;
             _lavaNode.OnTrackStuck += OnTrackStuck;
             _lavaNode.OnWebSocketClosed += OnWebSocketClosed;
             
-            _lavaNode.OnTrackEnded += AudioManager.TrackEnded;
+            _lavaNode.OnTrackEnd += AudioManager.TrackEnded;
 
             //WSocketManager socket = new WSocketManager("localhost:80");
 
@@ -204,25 +208,24 @@ namespace Giyu.Core.Managers
                 LogManager.Log("Exception", ex.Message);
             }
         }
-
-        private static async Task OnTrackException(TrackExceptionEventArgs arg)
+        private static async Task OnTrackException(TrackExceptionEventArg<LavaPlayer<LavaTrack>, LavaTrack> arg)
         {
             LogManager.Log("TrackException", $"{arg.Track.Title}");
-            arg.Player.Queue.Enqueue(arg.Track);
+            arg.Player.Vueue.Enqueue(arg.Track);
             await arg.Player.TextChannel?.SendMessageAsync(
                 $"{arg.Track.Title} foi adicionada novamente a playlist após um erro.");
         }
 
-        private static async Task OnTrackStuck(TrackStuckEventArgs arg)
+        private static async Task OnTrackStuck(TrackStuckEventArg<LavaPlayer<LavaTrack>, LavaTrack> arg)
         {
             LogManager.LogDebug("TrackStuck", $"{arg.Track.Title} ficou presa por {arg.Threshold}ms. => Console do Lavalink.");
 
-            arg.Player.Queue.Enqueue(arg.Track);
+            arg.Player.Vueue.Enqueue(arg.Track);
             await arg.Player.TextChannel?.SendMessageAsync(
                 $"{arg.Track.Title} foi adicionada novamente a playlist após ficar travada.");
         }
 
-        private static Task OnWebSocketClosed(WebSocketClosedEventArgs arg)
+        private static Task OnWebSocketClosed(WebSocketClosedEventArg arg)
         {
             LogManager.Log("WebSocketClosed", $"Conexão a Discord WebSocket fechada pelo motivo: {arg.Reason}");
             return Task.CompletedTask;

@@ -1,21 +1,23 @@
 ﻿using Newtonsoft.Json;
+using System;
 using System.IO;
 
 namespace Giyu.Core.Managers
 {
     public static class ConfigManager
     {
-        private static readonly string ConfigFolder = "Resources";
-        private static readonly string ConfigFile = "config.json";
-        private static readonly string ConfigPath = ConfigFolder + "/" + ConfigFile;
+        private static readonly string projectDirectory = Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName;
+        private static readonly string resourcesFolder = Path.Combine(projectDirectory, "Resources");
+        private static readonly string resouceConfigFile = resourcesFolder + @"\" + "config.json";
+
         public static BotConfig Config { get; private set; }
 
         static ConfigManager()
         {
-            if(!Directory.Exists(ConfigFolder))
-                Directory.CreateDirectory(ConfigFolder);
+            if (!Directory.Exists(resourcesFolder))
+                Directory.CreateDirectory(resourcesFolder);
 
-            if(!File.Exists(ConfigPath))
+            if(!File.Exists(resouceConfigFile))
             {
                 Config = new BotConfig()
                 {
@@ -25,11 +27,11 @@ namespace Giyu.Core.Managers
 
                 string json = JsonConvert.SerializeObject(Config, Formatting.Indented);
 
-                File.WriteAllText(ConfigPath, json);
+                File.WriteAllText(resouceConfigFile, json);
             }
             else
             {
-                string json = File.ReadAllText(ConfigPath);
+                string json = File.ReadAllText(resouceConfigFile);
                 Config = JsonConvert.DeserializeObject<BotConfig>(json);
             }
         }
@@ -59,6 +61,6 @@ namespace Giyu.Core.Managers
         public string LavaHostname { get; set; }
         
         [JsonProperty("lava_port")]
-        public short LavaPort { get; set; }
+        public ushort LavaPort { get; set; }
     }
 }

@@ -10,6 +10,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using Victoria;
+using Victoria.Node;
 
 namespace Giyu.Core
 {
@@ -57,8 +58,7 @@ namespace Giyu.Core
                     x.SelfDeaf = true;
                     x.Authorization = ConfigManager.Config.LavaAuthorization;
                     x.Hostname = ConfigManager.Config.LavaHostname;
-                    x.IsSsl = false;
-                    x.Port = 2333;
+                    x.Port = ConfigManager.Config.LavaPort;
                 });
 
                 ServiceManager.SetProvider(collection);
