@@ -4,6 +4,7 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using Giyu.Core.Managers;
 using Giyu.Core.Modules;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Diagnostics;
@@ -22,6 +23,8 @@ namespace Giyu.Core
         {
             try
             {
+
+
                 _client = new DiscordSocketClient(new DiscordSocketConfig()
                 {
                     LogLevel = LogSeverity.Debug,
@@ -41,9 +44,22 @@ namespace Giyu.Core
                     DefaultRunMode = Discord.Interactions.RunMode.Async,
                 });
 
+
+                #if DEBUG
+                    IConfigurationBuilder builder = new ConfigurationBuilder()
+                        .AddJsonFile($"appsettings.Development.json", true, true);
+                #else
+                    var builder = new ConfigurationBuilder()
+                            .AddJsonFile($"appsettings.json", true, true);
+                #endif
+
+                IConfiguration configuration = builder.AddEnvironmentVariables().Build();
+
                 ServiceCollection collection = new ServiceCollection();
 
-                collection.AddSingleton(_client);
+                collection.AddSingleton(configuration);
+
+                collection.AddSingleton(_client);   
                 collection.AddSingleton(_interactionService);
                 collection.AddSingleton(_commandService);
 
@@ -55,10 +71,10 @@ namespace Giyu.Core
                 collection.AddLavaNode(x =>
                 {
                     x.SelfDeaf = true;
-                    x.Authorization = ConfigManager.Config.LavaAuthorization;
-                    x.Hostname = ConfigManager.Config.LavaHostname;
+                    x.Hostname = configuration.GetSection("lava_host").Value;
+                    x.Authorization = configuration.GetSection("lava_pass").Value;
                     x.IsSsl = false;
-                    x.Port = 2333;
+                    x.Port = ushort.Parse(configuration.GetSection("lava_port").Value);
                 });
 
                 ServiceManager.SetProvider(collection);
@@ -72,7 +88,11 @@ namespace Giyu.Core
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(ConfigManager.Config.Token))
+                IConfiguration configuration = ServiceManager.Provider.GetService<IConfiguration>();
+
+                string token = configuration.GetSection("token").Value;
+
+                if (string.IsNullOrWhiteSpace(token))
                 {
                     throw new ArgumentNullException("Bot Token está vazio ou não existe.");
                 };
@@ -86,14 +106,11 @@ namespace Giyu.Core
                     p_info.WindowStyle = ProcessWindowStyle.Normal;
                     p_info.FileName = $"{projectDirectory}\\Lavalink\\start.bat";
 
-                if (Environment.OSVersion.Platform is PlatformID.Unix)
-                    p_info.FileName = $"{projectDirectory}\\Lavalink\\start.sh";
-
                 Process.Start(p_info);
 
                 await CommandManager.LoadCommandsAsync();
                 await EventManager.LoadCommands();
-                await _client.LoginAsync(TokenType.Bot, ConfigManager.Config.Token);
+                await _client.LoginAsync(TokenType.Bot, token);
                 await _client.StartAsync();
 
                 await Task.Delay(-1);

@@ -14,6 +14,9 @@ namespace Giyu.Core.Managers
 
         static ConfigManager()
         {
+            var config = Environment.GetEnvironmentVariable("token");
+
+            Console.WriteLine(config);
             
             if(!Directory.Exists(ResourcesPath))
                 Directory.CreateDirectory(ResourcesPath);
