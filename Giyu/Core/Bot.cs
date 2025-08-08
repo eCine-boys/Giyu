@@ -59,9 +59,12 @@ namespace Giyu.Core
 
                 collection.AddSingleton(configuration);
 
-                collection.AddSingleton(_client);   
+                collection.AddSingleton(_client);
                 collection.AddSingleton(_interactionService);
                 collection.AddSingleton(_commandService);
+                collection.AddSingleton<PlaybackService>();
+                collection.AddSingleton<QueueService>();
+                collection.AddSingleton<LyricsService>();
 
                 if(string.IsNullOrEmpty(ConfigManager.Config.LavaAuthorization) || string.IsNullOrEmpty(ConfigManager.Config.LavaHostname))
                 {

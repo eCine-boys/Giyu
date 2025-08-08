@@ -19,6 +19,8 @@ namespace Giyu.Core.Managers
         private readonly static DiscordSocketClient _client = ServiceManager.GetService<DiscordSocketClient>();
         private readonly static CommandService _commandService = ServiceManager.GetService<CommandService>();
         private static InteractionService _interactionService = ServiceManager.Provider.GetRequiredService<InteractionService>();
+        private readonly static PlaybackService _playbackService = ServiceManager.GetService<PlaybackService>();
+        private readonly static QueueService _queueService = ServiceManager.GetService<QueueService>();
         public static IReadOnlyList<SlashCommandInfo> AllSlashCommands;
         public static Task LoadCommands()
         {
@@ -49,7 +51,7 @@ namespace Giyu.Core.Managers
             _lavaNode.OnTrackStuck += OnTrackStuck;
             _lavaNode.OnWebSocketClosed += OnWebSocketClosed;
             
-            _lavaNode.OnTrackEnded += AudioManager.TrackEnded;
+            _lavaNode.OnTrackEnded += _playbackService.TrackEnded;
 
             //WSocketManager socket = new WSocketManager("localhost:80");
 
@@ -164,7 +166,7 @@ namespace Giyu.Core.Managers
 
                         LogManager.Log("SELECT", $"[{interaction.Data.CustomId}] => [{songId}]");
 
-                        Embed embed = await AudioManager.PlayAsync(user, context.Guild, $"https://youtube.com/watch?v={songId}", context);
+                        Embed embed = await _playbackService.PlayAsync(user, context.Guild, $"https://youtube.com/watch?v={songId}", context);
 
                         await interaction.RespondAsync(embed: embed);
 
@@ -176,7 +178,7 @@ namespace Giyu.Core.Managers
 
                         string page = string.Join(", ", interaction.Data.Values);
 
-                        LavaTrack[] tracks = AudioManager.GetPageOfQueue(guild, int.Parse(page));
+                        LavaTrack[] tracks = _queueService.GetPageOfQueue(guild, int.Parse(page));
 
                         EmbedBuilder eBuilder = new EmbedBuilder();
 
