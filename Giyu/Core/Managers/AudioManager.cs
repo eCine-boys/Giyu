@@ -376,15 +376,9 @@ namespace Giyu.Core.Managers
                     return "Player não conectado a um canal de voz.";
                 }
 
-                if (player.PlayerState is PlayerState.Playing)
+                if (player.PlayerState != PlayerState.Playing)
                 {
-                    await player.PauseAsync();
-                }
-
-                if (!(player.PlayerState is PlayerState.Playing))
-                {
-                    await player.PauseAsync();
-                    return $"Não tem música ativa para pausar.";
+                    return "Não tem música ativa para pausar.";
                 }
 
                 await player.PauseAsync();
