@@ -65,6 +65,7 @@ namespace Giyu.Core
                 collection.AddSingleton<PlaybackService>();
                 collection.AddSingleton<QueueService>();
                 collection.AddSingleton<LyricsService>();
+                collection.AddSingleton<AudioManager>();
 
                 if(string.IsNullOrEmpty(ConfigManager.Config.LavaAuthorization) || string.IsNullOrEmpty(ConfigManager.Config.LavaHostname))
                 {
